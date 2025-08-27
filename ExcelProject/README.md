@@ -1,12 +1,53 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# ExcelProject
 
-Currently, two official plugins are available:
+¡Bienvenido, joven padawan, al ExcelProject!
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+> "El miedo a las hojas de cálculo lleva a la ira, la ira lleva al odio, el odio lleva al sufrimiento... ¡y a usar Excel!" — Maestro Yoda (probablemente)
 
-## Expanding the ESLint configuration
+## ¿Qué es esto?
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Un proyecto tan poderoso que haría temblar a la mismísima Estrella de la Muerte: una hoja de cálculo tipo Excel hecha en React, donde puedes escribir, añadir filas y columnas, y sentirte como el emperador de tus propios datos.
+
+## ¿Por qué?
+
+Porque los Jedi usan la Fuerza, pero los frikis usamos JavaScript, y si puedes hacer tu propio Excel, ¿por qué no hacerlo?
+
+## Características
+
+- Celdas editables, para que no dependas del Lado Oscuro de Microsoft.
+- Añade filas y columnas como si usaras la Fuerza.
+- Interfaz tan limpia que ni un droide de protocolo podría quejarse.
+- ¡Sin midi-chlorianos requeridos!
+
+## Instalación
+
+1. Clona este repositorio con la Fuerza (o con git):
+	```bash
+	git clone <url-del-repo>
+	```
+2. Instala las dependencias:
+	```bash
+	npm install
+	```
+3. Lanza el Halcón Milenario:
+	```bash
+	npm run dev
+	```
+4. Abre tu navegador en [http://localhost:5173](http://localhost:5173) y que la Fuerza te acompañe.
+
+## ¿Quién hizo esto?
+
+Un friki con más líneas de código que midiclorianos en la sangre de Anakin.
+
+## Contribuir
+
+¿Quieres unirte a la Orden Jedi de los desarrolladores? Haz un fork, abre un PR y que la Fuerza del open source esté contigo.
+
+## Licencia
+
+MIT, porque en la galaxia nadie paga licencias imperiales.
+
+---
+
+> "Hazlo o no lo hagas, pero no lo intentes... ¡y dale una estrella a este repo!" — Yoda
