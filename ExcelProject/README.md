@@ -50,4 +50,14 @@ MIT, porque en la galaxia nadie paga licencias imperiales.
 
 ---
 
+## Easter Eggs y referencias frikis
+
+- Si encuentras el error #404, tranquilo, no es una trampa del Imperio, solo es un bug.
+- ¿Sabías que si presionas Ctrl+S tres veces seguidas, Chewbacca te manda un rugido de aprobación? (No, pero imagínalo).
+- Este README fue escrito con la ayuda de un droide protocolario y revisado por un Jawa.
+- Si tu código falla, recuerda: “Que la Fuerza (de voluntad para debuggear) te acompañe”.
+- Rumor: Si abres la consola y escribes `console.log('I am your father')`, tu navegador se vuelve Sith.
+
+---
+
 > "Hazlo o no lo hagas, pero no lo intentes... ¡y dale una estrella a este repo!" — Yoda
