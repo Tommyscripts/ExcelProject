@@ -229,13 +229,15 @@ const ExcelComponent: React.FC = () => {
       hadDragSinceMouseDown.current = false;
       return;
     }
-    // Ctrl+click: toggle la celda en extraSelections
-    if (ctrlPressed.current) {
+  // Ctrl+click: toggle la celda en extraSelections
+  if (ctrlPressed.current) {
       const exists = extraSelections.find(s => s.r1 === row && s.r2 === row && s.c1 === col && s.c2 === col);
   if (exists) setExtraSelections(prev => prev.filter(s => !(s.r1 === row && s.r2 === row && s.c1 === col && s.c2 === col)));
       else setExtraSelections(prev => [...prev, { r1: row, c1: col, r2: row, c2: col }]);
       return;
     }
+  // Para click normal, limpiar selecciones aditivas previas
+  setExtraSelections([]);
     // Si el Shift está presionado, expandir o crear selección usando la celda actualmente seleccionada como origen
     if (shiftPressed.current) {
       // Si hay una celda activa (selected), usarla como anchor y expandir hasta la celda clicada
@@ -441,17 +443,43 @@ const ExcelComponent: React.FC = () => {
 
   // Mientras se arrastra, hacemos seguimiento del elemento bajo el cursor y actualizamos selectionEnd por celda
   React.useEffect(() => {
+    // Usar coordenadas relativas a la tabla y `colWidths` para calcular fila/col
     const onMove = (e: MouseEvent) => {
       if (!isMouseDown.current || !shiftPressed.current) return;
-      const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
-      if (!el) return;
-      const td = el.closest('td[data-cell-row][data-cell-col]') as HTMLElement | null;
-      if (!td) return;
-      const r = Number(td.getAttribute('data-cell-row'));
-      const c = Number(td.getAttribute('data-cell-col'));
-      if (!Number.isNaN(r) && !Number.isNaN(c)) {
-        setSelectionEnd({ row: r, col: c });
+      const table = tableRef.current;
+      if (!table) return;
+      const rect = table.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
+
+      // calcular ancho del primer TH (gutter de filas)
+      const firstTh = table.querySelector('thead th');
+      const gutter = firstTh ? firstTh.getBoundingClientRect().width : 40;
+      // altura del header (thead)
+      const thead = table.querySelector('thead');
+      const headerHeight = thead ? thead.getBoundingClientRect().height : 36;
+
+      // calcular columna usando colWidths
+      let cx = x - gutter;
+      if (cx < 0) return;
+      let acc = 0;
+      let col = 0;
+      for (let i = 0; i < colWidths.length; i++) {
+        acc += (colWidths[i] ?? 96);
+        if (cx <= acc) { col = i; break; }
+        // si llegamos al final sin romper, col será última
+        if (i === colWidths.length - 1) col = i;
       }
+
+      // calcular fila usando altura fija (36px por fila)
+      const relY = y - headerHeight; // 0 en la primera fila
+      const rowHeight = 36;
+      let row = Math.floor(relY / rowHeight);
+      if (row < 0) row = 0;
+      if (row >= data.length) row = data.length - 1;
+
+      setSelectionEnd({ row, col });
     };
     window.addEventListener('mousemove', onMove);
     return () => window.removeEventListener('mousemove', onMove);
@@ -807,6 +835,8 @@ const ExcelComponent: React.FC = () => {
                         }
                         return;
                       }
+                      // limpiar selecciones aditivas previas y establecer nueva selección
+                      setExtraSelections([]);
                       setSelectionStart({ row: 0, col: colIdx });
                       setSelectionEnd({ row: data.length - 1, col: colIdx });
                       setSelected({ row: 0, col: colIdx });
