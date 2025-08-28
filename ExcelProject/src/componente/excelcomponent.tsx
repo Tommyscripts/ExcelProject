@@ -1005,6 +1005,63 @@ const ExcelComponent: React.FC = () => {
     XLSX.writeFile(wb, 'export.xlsx');
   };
 
+  // Limpia la selección actual o toda la hoja si no hay selección
+  const clearSelectedOrAll = () => {
+    console.debug('clearSelectedOrAll invoked', { selectionStart, selectionEnd, extraSelections, selected });
+    pushHistory();
+    setData(prev => {
+      const next = prev.map(r => [...r]);
+      // selección principal
+      if (selectionStart && selectionEnd) {
+        const r1 = Math.min(selectionStart.row, selectionEnd.row);
+        const r2 = Math.max(selectionStart.row, selectionEnd.row);
+        const c1 = Math.min(selectionStart.col, selectionEnd.col);
+        const c2 = Math.max(selectionStart.col, selectionEnd.col);
+        for (let rr = r1; rr <= r2; rr++) {
+          for (let cc = c1; cc <= c2; cc++) {
+            if (next[rr] && next[rr][cc] != null) next[rr][cc] = '';
+          }
+        }
+        // limpiar selección visual
+        setSelectionStart(null);
+        setSelectionEnd(null);
+        setExtraSelections([]);
+        setSelected(null);
+        return next;
+      }
+      // selecciones adicionales
+      if (extraSelections && extraSelections.length) {
+        for (const s of extraSelections) {
+          for (let rr = s.r1; rr <= s.r2; rr++) {
+            for (let cc = s.c1; cc <= s.c2; cc++) {
+              if (next[rr] && next[rr][cc] != null) next[rr][cc] = '';
+            }
+          }
+        }
+        setExtraSelections([]);
+        setSelected(null);
+        return next;
+      }
+      // celda individual seleccionada
+      if (selected) {
+        const { row, col } = selected;
+        if (next[row] && next[row][col] != null) next[row][col] = '';
+        setSelected(null);
+        return next;
+      }
+      // sin selección: confirmar y limpiar toda la hoja
+      if (!window.confirm('No hay selección. ¿Limpiar toda la hoja?')) return prev;
+      for (let rr = 0; rr < next.length; rr++) {
+        for (let cc = 0; cc < next[rr].length; cc++) next[rr][cc] = '';
+      }
+      setSelected(null);
+      setSelectionStart(null);
+      setSelectionEnd(null);
+      setExtraSelections([]);
+      return next;
+    });
+  };
+
   // aplicar estilos condicionales antes de render
   const computeCellStyles = (r:number,c:number) => {
     let style: React.CSSProperties = {};
@@ -1086,6 +1143,13 @@ const ExcelComponent: React.FC = () => {
             <button onClick={() => fileInputRef.current?.click()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-3 py-1 rounded text-sm">Importar Excel</button>
             <button onClick={exportToExcel} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-3 py-1 rounded text-sm">Exportar Excel</button>
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={onFileInputChange} style={{ display: 'none' }} />
+            <button
+              onClick={() => clearSelectedOrAll()}
+              title="Limpiar celdas seleccionadas o toda la hoja"
+              className="bg-gray-700 hover:bg-gray-800 text-white font-semibold px-3 py-1 rounded text-sm"
+            >
+              Clean
+            </button>
           </div>
         </div>
 
