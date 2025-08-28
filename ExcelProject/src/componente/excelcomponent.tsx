@@ -115,7 +115,7 @@ const ExcelComponent: React.FC = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
   // Mostrar tooltip con un cooldown para permitir manejar la celda sin que aparezca instantáneamente
-  const HOVER_DELAY_MS = 2000; // 2s (ajustado)
+  const HOVER_DELAY_MS = 1500;
   const hoverTimer = useRef<number | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -198,19 +198,19 @@ const ExcelComponent: React.FC = () => {
           value={local}
           onChange={onChange}
           onMouseEnter={() => {
-            // delegar a la misma lógica que el td
+            // Si la celda está seleccionada, mostramos tooltip inmediatamente.
             if (isSelected) {
               if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
               setShowTooltip(true);
               return;
             }
-            if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-            setShowTooltip(false);
+            // Si ya hay un timer o el tooltip ya se muestra, no reiniciamos nada.
+            if (showTooltip || hoverTimer.current) return;
             hoverTimer.current = window.setTimeout(() => { hoverTimer.current = null; setShowTooltip(true); }, HOVER_DELAY_MS) as unknown as number;
           }}
           onMouseLeave={() => {
-            if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
-            setShowTooltip(false);
+            // no cancelamos aquí para evitar flicker cuando se mueve entre td y input;
+            // la salida del td es la que cancela el tooltip.
           }}
           onFocus={handleFocus}
           onBlur={handleBlur}
@@ -218,7 +218,7 @@ const ExcelComponent: React.FC = () => {
           className="w-full h-full px-2 bg-transparent focus:outline-none text-sm cursor-text"
           tabIndex={0}
         />
-  {(hasOverflow && showTooltip && !isEditing.current) && (
+  {(showTooltip && !isEditing.current && String(local).trim() !== '') && (
           <div className="absolute left-0 top-0 z-50 p-2 bg-white border rounded shadow-md text-sm max-w-[400px] break-words">
             <div className="text-xs text-gray-500 mb-1">Texto completo</div>
             {local}
