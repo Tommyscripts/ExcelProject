@@ -315,7 +315,7 @@ const ExcelComponent: React.FC = () => {
   const [showTooltip, setShowTooltip] = useState(false);
 
     useEffect(() => {
-      if (!inputRef.current) return;
+  if (!inputRef.current) return;
       const el = inputRef.current;
       const check = () => {
         try {
@@ -330,6 +330,22 @@ const ExcelComponent: React.FC = () => {
       ro.observe(el);
       return () => ro.disconnect();
     }, [local, width]);
+
+    // leer atributos data-extra-style/data-extra-class del td parent al montar
+    useEffect(() => {
+      try {
+        const td = inputRef.current?.closest('td') as HTMLElement | null;
+        if (!td) return;
+        const s = (td.getAttribute('data-extra-style') || '');
+        const c = (td.getAttribute('data-extra-class') || '');
+        if (s) {
+          try { setExtraStyle(JSON.parse(s)); } catch (e) { /* ignore */ }
+        }
+        if (c) setExtraClass(c);
+      } catch (e) {
+        // ignore
+      }
+    }, []);
 
     // limpiar timer si el componente se desmonta
     useEffect(() => {
@@ -1072,6 +1088,37 @@ const ExcelComponent: React.FC = () => {
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={onFileInputChange} style={{ display: 'none' }} />
           </div>
         </div>
+
+          {/* CONTROLES ADICIONALES: Undo/Redo, Find/Replace, Freeze, Sort, Conditional Formatting */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <button onClick={() => { undo(); }} disabled={!history.length} className="px-2 py-1 bg-gray-200 rounded">Undo</button>
+              <button onClick={() => { redo(); }} disabled={!future.length} className="px-2 py-1 bg-gray-200 rounded">Redo</button>
+            </div>
+
+            <div className="flex items-center gap-2 p-2 border rounded bg-white">
+              <input placeholder="Buscar" value={findText} onChange={e=>setFindText(e.target.value)} className="px-2 py-1 border rounded text-sm" />
+              <input placeholder="Reemplazar" value={replaceText} onChange={e=>setReplaceText(e.target.value)} className="px-2 py-1 border rounded text-sm" />
+              <button onClick={() => { findMatches(); }} className="px-2 py-1 bg-blue-500 text-white rounded text-sm">Find</button>
+              <button onClick={() => replaceCurrent()} className="px-2 py-1 bg-yellow-400 text-black rounded text-sm">Replace</button>
+              <button onClick={() => replaceAll()} className="px-2 py-1 bg-red-400 text-white rounded text-sm">Replace All</button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm">Freeze R:</label>
+              <input type="number" value={freezeRows} onChange={e=>setFreezeRows(Number(e.target.value)||0)} className="w-16 px-2 py-1 border rounded text-sm" />
+              <label className="text-sm">C:</label>
+              <input type="number" value={freezeCols} onChange={e=>setFreezeCols(Number(e.target.value)||0)} className="w-16 px-2 py-1 border rounded text-sm" />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button onClick={() => sortSelectionByColumn()} className="px-2 py-1 bg-indigo-500 text-white rounded text-sm">Sort Range</button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button onClick={() => addConditionalFormatViaPrompt()} className="px-2 py-1 bg-pink-500 text-white rounded text-sm">Add Conditional Format</button>
+            </div>
+          </div>
 
         <div className="flex gap-2 mb-4">
           <button onClick={combineCells} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">Combinar celdas</button>
