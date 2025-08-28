@@ -51,6 +51,198 @@ const ExcelComponent: React.FC = () => {
   // Merges: regiones combinadas
   const [merges, setMerges] = useState<Array<{ r: number; c: number; rows: number; cols: number }>>([]);
 
+  // --- Historial para Undo/Redo ---
+  const HISTORY_LIMIT = 50;
+  const [history, setHistory] = useState<any[]>([]);
+  const [future, setFuture] = useState<any[]>([]);
+  const pushHistory = useCallback((snapshot?: any) => {
+    const snap = snapshot ?? JSON.parse(JSON.stringify({ data, merges, colWidths, selected, selectionStart, selectionEnd }));
+    setHistory(h => {
+      const next = [...h, snap];
+      if (next.length > HISTORY_LIMIT) next.shift();
+      return next;
+    });
+    setFuture([]);
+  }, [data, merges, colWidths, selected, selectionStart, selectionEnd]);
+
+  const undo = () => {
+    setHistory(h => {
+      if (h.length === 0) return h;
+      const last = h[h.length - 1];
+      setFuture(f => [JSON.parse(JSON.stringify({ data, merges, colWidths, selected, selectionStart, selectionEnd })), ...f]);
+      // restaurar
+      setData(last.data ?? last);
+      setMerges(last.merges ?? last.merges ?? last.merges ?? (last.merges || []));
+      setColWidths(last.colWidths ?? (last.colWidths || colWidths));
+      setSelected(last.selected ?? null);
+      setSelectionStart(last.selectionStart ?? null);
+      setSelectionEnd(last.selectionEnd ?? null);
+      return h.slice(0, -1);
+    });
+  };
+
+  const redo = () => {
+    setFuture(f => {
+      if (f.length === 0) return f;
+      const [first, ...rest] = f;
+      // push current into history
+      setHistory(h => [...h, JSON.parse(JSON.stringify({ data, merges, colWidths, selected, selectionStart, selectionEnd }))]);
+      setData(first.data ?? first);
+      setMerges(first.merges ?? (first.merges || []));
+      setColWidths(first.colWidths ?? (first.colWidths || colWidths));
+      setSelected(first.selected ?? null);
+      setSelectionStart(first.selectionStart ?? null);
+      setSelectionEnd(first.selectionEnd ?? null);
+      return rest;
+    });
+  };
+
+  // --- Find & Replace ---
+  const [findText, setFindText] = useState('');
+  const [replaceText, setReplaceText] = useState('');
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [matchRegex, setMatchRegex] = useState(false);
+  const [searchMatches, setSearchMatches] = useState<Array<{ row: number; col: number; text: string }>>([]);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState<number>(0);
+
+  const findMatches = useCallback((scopeAll = true) => {
+    const q = findText;
+    if (!q) { setSearchMatches([]); setCurrentMatchIndex(0); return []; }
+    let re: RegExp | null = null;
+    if (matchRegex) {
+      try { re = new RegExp(q, caseSensitive ? '' : 'i'); } catch (e) { re = null; }
+    }
+    const matches: Array<{ row: number; col: number; text: string }> = [];
+    for (let r = 0; r < data.length; r++) {
+      for (let c = 0; c < (data[0] || []).length; c++) {
+        const cell = String(data[r][c] ?? '');
+        if (!cell) continue;
+        if (matchRegex && re) {
+          if (re.test(cell)) matches.push({ row: r, col: c, text: cell });
+        } else {
+          const a = caseSensitive ? cell : cell.toLowerCase();
+          const b = caseSensitive ? q : q.toLowerCase();
+          if (a.indexOf(b) !== -1) matches.push({ row: r, col: c, text: cell });
+        }
+      }
+    }
+    setSearchMatches(matches);
+    setCurrentMatchIndex(0);
+    return matches;
+  }, [findText, caseSensitive, matchRegex, data]);
+
+  const goToMatch = (idx: number) => {
+    if (!searchMatches.length) return;
+    const m = searchMatches[(idx + searchMatches.length) % searchMatches.length];
+    setSelected({ row: m.row, col: m.col });
+    setSelectionStart({ row: m.row, col: m.col });
+    setSelectionEnd({ row: m.row, col: m.col });
+    setCurrentMatchIndex((idx + searchMatches.length) % searchMatches.length);
+  };
+
+  const replaceCurrent = () => {
+    if (!searchMatches.length) return;
+    const m = searchMatches[currentMatchIndex];
+    pushHistory();
+    setData(prev => {
+      const next = prev.map(r => [...r]);
+      const original = String(next[m.row][m.col] ?? '');
+      let replaced = original;
+      if (matchRegex) {
+        try { replaced = original.replace(new RegExp(findText, caseSensitive ? '' : 'i'), replaceText); } catch (e) { replaced = original; }
+      } else {
+        if (caseSensitive) replaced = original.split(findText).join(replaceText);
+        else replaced = original.split(new RegExp(findText, 'gi')).join(replaceText);
+      }
+      next[m.row][m.col] = replaced;
+      return next;
+    });
+    // refresh matches
+    setTimeout(() => findMatches(), 0);
+  };
+
+  const replaceAll = () => {
+    const matches = findMatches();
+    if (!matches.length) return;
+    pushHistory();
+    setData(prev => {
+      const next = prev.map(r => [...r]);
+      for (const m of matches) {
+        const original = String(next[m.row][m.col] ?? '');
+        let replaced = original;
+        if (matchRegex) {
+          try { replaced = original.replace(new RegExp(findText, caseSensitive ? '' : 'i'), replaceText); } catch (e) { replaced = original; }
+        } else {
+          if (caseSensitive) replaced = original.split(findText).join(replaceText);
+          else replaced = original.split(new RegExp(findText, 'gi')).join(replaceText);
+        }
+        next[m.row][m.col] = replaced;
+      }
+      return next;
+    });
+    setTimeout(() => findMatches(), 0);
+  };
+
+  // --- Freeze panes (filas/columnas) ---
+  const [freezeRows, setFreezeRows] = useState<number>(0);
+  const [freezeCols, setFreezeCols] = useState<number>(0);
+
+  const getColLefts = useCallback(() => {
+    const lefts: number[] = [];
+    let acc = 40; // gutter (row header) ancho aproximado
+    for (let i = 0; i < colWidths.length; i++) {
+      lefts[i] = acc;
+      acc += (colWidths[i] ?? 96);
+    }
+    return lefts;
+  }, [colWidths]);
+
+  // --- Sort Range ---
+  const sortSelectionByColumn = () => {
+    if (!selectionStart || !selectionEnd) return;
+    const r1 = Math.min(selectionStart.row, selectionEnd.row);
+    const r2 = Math.max(selectionStart.row, selectionEnd.row);
+    const c1 = Math.min(selectionStart.col, selectionEnd.col);
+    const c2 = Math.max(selectionStart.col, selectionEnd.col);
+    const colLetter = window.prompt('Columna para ordenar (ej: A, B, ... relative a hoja):', getColName(c1));
+    if (!colLetter) return;
+    const colIdx = colNameToIndex(colLetter);
+    if (colIdx < c1 || colIdx > c2) {
+      alert('La columna debe estar dentro de la selección.');
+      return;
+    }
+    const dir = window.prompt('Dirección: asc o desc', 'asc') || 'asc';
+    pushHistory();
+    setData(prev => {
+      const next = prev.map(r => [...r]);
+      const slice = next.slice(r1, r2 + 1);
+      slice.sort((a, b) => {
+        const va = a[colIdx] ?? '';
+        const vb = b[colIdx] ?? '';
+        const na = Number(String(va).replace(/,/g, ''));
+        const nb = Number(String(vb).replace(/,/g, ''));
+        if (!Number.isNaN(na) && !Number.isNaN(nb)) return dir === 'asc' ? na - nb : nb - na;
+        const sa = String(va);
+        const sb = String(vb);
+        return dir === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+      });
+      for (let i = r1; i <= r2; i++) next[i] = slice[i - r1];
+      return next;
+    });
+  };
+
+  // --- Conditional Formatting (simple) ---
+  type CFRule = { id: string; type: 'gt'|'lt'|'eq'|'contains'; value: string; bg?: string; color?: string; scope?: { r1:number,c1:number,r2:number,c2:number } | null };
+  const [conditionalFormats, setConditionalFormats] = useState<CFRule[]>([]);
+  const addConditionalFormatViaPrompt = () => {
+    const type = window.prompt('Tipo de regla: gt, lt, eq, contains', 'gt') as any;
+    if (!type) return;
+    const value = window.prompt('Valor (para contains escribe texto)', '0') || '0';
+    const bg = window.prompt('Color de fondo (css)', '#fffbcc') || '#fffbcc';
+    const id = String(Date.now());
+    setConditionalFormats(prev => [...prev, { id, type, value, bg, color: undefined, scope: null }]);
+  };
+
   // Memoized cell component to reduce re-renders while typing
   // Defined inside component to capture types but memoized to avoid re-render when props unchanged
   const Cell = React.useMemo(() => React.memo(function CellInner(props: {
@@ -71,6 +263,9 @@ const ExcelComponent: React.FC = () => {
     onClick: (r: number, c: number) => void;
   }) {
     const { value, row, col, rowSpan, colSpan, width, height, isSelected, isMultiSelected, isDragging, onCommit, onMouseDown, onMouseEnter, onMouseUp, onClick } = props;
+  // support additional style props passed via data-attributes
+  const [extraStyle, setExtraStyle] = useState<React.CSSProperties>({});
+  const [extraClass, setExtraClass] = useState<string>('');
     const [local, setLocal] = useState<string>(value ?? '');
     const isEditing = useRef(false);
     const commitTimer = useRef<number | null>(null);
@@ -148,8 +343,8 @@ const ExcelComponent: React.FC = () => {
 
     return (
       <td rowSpan={rowSpan} colSpan={colSpan} data-cell-row={row} data-cell-col={col}
-        className={`p-0 relative ${isSelected || isMultiSelected || isDragging ? 'ring-2 ring-blue-400 bg-blue-50' : 'border border-gray-200'}`}
-        style={{ width, height }}
+  className={`p-0 relative ${isSelected || isMultiSelected || isDragging ? 'ring-2 ring-blue-400 bg-blue-50' : 'border border-gray-200'} ${extraClass}`}
+  style={{ width, height, ...(extraStyle || {}) }}
         onMouseDown={() => onMouseDown(row, col)}
         onMouseEnter={() => {
           onMouseEnter(row, col);
@@ -794,6 +989,29 @@ const ExcelComponent: React.FC = () => {
     XLSX.writeFile(wb, 'export.xlsx');
   };
 
+  // aplicar estilos condicionales antes de render
+  const computeCellStyles = (r:number,c:number) => {
+    let style: React.CSSProperties = {};
+    let cls = '';
+    // search matches
+    if (searchMatches.find(m=>m.row===r && m.col===c)) {
+      cls += ' search-match';
+      style.outline = '2px solid rgba(255,165,0,0.7)';
+    }
+    // conditional formats
+    for (const cf of conditionalFormats) {
+      const scope = cf.scope;
+      const inScope = !scope || (r>=cf.scope!.r1 && r<=cf.scope!.r2 && c>=cf.scope!.c1 && c<=cf.scope!.c2);
+      if (!inScope) continue;
+      const cellVal = String(data[r][c] ?? '');
+      if (cf.type === 'gt') { if (!Number.isNaN(Number(cellVal)) && Number(cellVal) > Number(cf.value)) { style.background = cf.bg; } }
+      if (cf.type === 'lt') { if (!Number.isNaN(Number(cellVal)) && Number(cellVal) < Number(cf.value)) { style.background = cf.bg; } }
+      if (cf.type === 'eq') { if (cellVal === cf.value) style.background = cf.bg; }
+      if (cf.type === 'contains') { if (cellVal.indexOf(cf.value) !== -1) style.background = cf.bg; }
+    }
+    return { style, cls } as any;
+  };
+
   const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -971,10 +1189,11 @@ const ExcelComponent: React.FC = () => {
                       // si no es la celda inicial del merge, omitimos el render (queda cubierta)
                       if (covering.r !== rowIdx || covering.c !== colIdx) return null;
                       // si es la celda inicial, renderizamos con rowSpan/colSpan
-                      const isMultiSelected = isCellInSelections(rowIdx, colIdx) || isCellInSelections(covering.r + covering.rows - 1, covering.c + covering.cols - 1);
+            const isMultiSelected = isCellInSelections(rowIdx, colIdx) || isCellInSelections(covering.r + covering.rows - 1, covering.c + covering.cols - 1);
                       // calcular ancho como suma de anchos de las columnas cubiertas
                       const spanWidth = colWidths.slice(colIdx, colIdx + covering.cols).reduce((a, b) => a + (b ?? 96), 0);
-                      return (
+            const cs = computeCellStyles(rowIdx, colIdx);
+            return (
                         <Cell
                           key={colIdx}
                           value={cell}
@@ -992,13 +1211,17 @@ const ExcelComponent: React.FC = () => {
                           onMouseEnter={onCellMouseEnter}
                           onMouseUp={onCellMouseUp}
                           onClick={onCellClick}
+              // pasar estilos extra como props en data-attributes (Cell usa internal state)
+              data-extra-style={JSON.stringify(cs.style)}
+              data-extra-class={cs.cls}
                         />
                       );
                     }
 
                     const isSelected = selected && selected.row === rowIdx && selected.col === colIdx;
                     const isMultiSelected = isCellInSelections(rowIdx, colIdx);
-                    return (
+          const cs = computeCellStyles(rowIdx, colIdx);
+          return (
                       <Cell
                         key={colIdx}
                         value={cell}
@@ -1014,6 +1237,8 @@ const ExcelComponent: React.FC = () => {
                         onMouseEnter={onCellMouseEnter}
                         onMouseUp={onCellMouseUp}
                         onClick={onCellClick}
+            data-extra-style={JSON.stringify(cs.style)}
+            data-extra-class={cs.cls}
                       />
                     );
                   })}
