@@ -112,9 +112,12 @@ const ExcelComponent: React.FC = () => {
       }
     };
 
-    const inputRef = useRef<HTMLInputElement | null>(null);
-    const [hasOverflow, setHasOverflow] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  // Mostrar tooltip con un cooldown para permitir manejar la celda sin que aparezca instantáneamente
+  const HOVER_DELAY_MS = 2000; // 2s (ajustado)
+  const hoverTimer = useRef<number | null>(null);
+  const [showTooltip, setShowTooltip] = useState(false);
 
     useEffect(() => {
       if (!inputRef.current) return;
@@ -133,27 +136,89 @@ const ExcelComponent: React.FC = () => {
       return () => ro.disconnect();
     }, [local, width]);
 
+    // limpiar timer si el componente se desmonta
+    useEffect(() => {
+      return () => {
+        if (hoverTimer.current) {
+          window.clearTimeout(hoverTimer.current);
+          hoverTimer.current = null;
+        }
+      };
+    }, []);
+
     return (
       <td rowSpan={rowSpan} colSpan={colSpan} data-cell-row={row} data-cell-col={col}
         className={`p-0 relative ${isSelected || isMultiSelected || isDragging ? 'ring-2 ring-blue-400 bg-blue-50' : 'border border-gray-200'}`}
         style={{ width, height }}
         onMouseDown={() => onMouseDown(row, col)}
-        onMouseEnter={() => { onMouseEnter(row, col); setIsHovered(true); }}
-        onMouseLeave={() => setIsHovered(false)}
-        onMouseUp={() => onMouseUp()}
-        onClick={() => onClick(row, col)}>
+        onMouseEnter={() => {
+          onMouseEnter(row, col);
+          // si la celda está seleccionada, mostramos el tooltip inmediatamente
+          if (isSelected) {
+            if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
+            setShowTooltip(true);
+            return;
+          }
+          // iniciar cooldown para mostrar tooltip
+          if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
+          setShowTooltip(false);
+          hoverTimer.current = window.setTimeout(() => {
+            hoverTimer.current = null;
+            setShowTooltip(true);
+          }, HOVER_DELAY_MS) as unknown as number;
+        }}
+        onMouseLeave={() => {
+          // cancelar cooldown y ocultar tooltip
+          if (hoverTimer.current) {
+            window.clearTimeout(hoverTimer.current);
+            hoverTimer.current = null;
+          }
+          setShowTooltip(false);
+        }}
+        onMouseUp={() => {
+          // al soltar, ejecutar handler y ocultar tooltip
+          if (hoverTimer.current) {
+            window.clearTimeout(hoverTimer.current);
+            hoverTimer.current = null;
+          }
+          setShowTooltip(false);
+          onMouseUp();
+        }}
+        onClick={() => {
+          if (hoverTimer.current) {
+            window.clearTimeout(hoverTimer.current);
+            hoverTimer.current = null;
+          }
+          setShowTooltip(false);
+          onClick(row, col);
+        }}>
         <input
           ref={inputRef}
           type="text"
           value={local}
           onChange={onChange}
+          onMouseEnter={() => {
+            // delegar a la misma lógica que el td
+            if (isSelected) {
+              if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
+              setShowTooltip(true);
+              return;
+            }
+            if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
+            setShowTooltip(false);
+            hoverTimer.current = window.setTimeout(() => { hoverTimer.current = null; setShowTooltip(true); }, HOVER_DELAY_MS) as unknown as number;
+          }}
+          onMouseLeave={() => {
+            if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
+            setShowTooltip(false);
+          }}
           onFocus={handleFocus}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           className="w-full h-full px-2 bg-transparent focus:outline-none text-sm cursor-text"
           tabIndex={0}
         />
-        {(hasOverflow && (isSelected || isHovered) && !isEditing.current) && (
+  {(hasOverflow && showTooltip && !isEditing.current) && (
           <div className="absolute left-0 top-0 z-50 p-2 bg-white border rounded shadow-md text-sm max-w-[400px] break-words">
             <div className="text-xs text-gray-500 mb-1">Texto completo</div>
             {local}
@@ -267,33 +332,28 @@ const ExcelComponent: React.FC = () => {
   };
 
   const handleCellMouseDown = (row: number, col: number) => {
-    // Solo iniciar selección múltiple por arrastre si Shift está presionado
-    if (shiftPressed.current) {
-      isMouseDown.current = true;
-      setIsDragging(true);
-      // si existe una celda activa, usarla como anchor; si no, iniciar anchor en la celda actual
-      if (selected) {
-        setSelectionStart({ row: selected.row, col: selected.col });
-      } else if (!selectionStart) {
-        setSelectionStart({ row, col });
-        setSelected({ row, col });
-      }
-      setSelectionEnd({ row, col });
+    // Iniciar posible selección por mousedown.
+    // Si Shift está presionado y hay una celda previamente seleccionada, usarla como ancla.
+    // Si no, anclar la selección a la celda clicada para evitar rangos accidentales.
+    isMouseDown.current = true;
+    // no activamos isDragging hasta que el usuario mueva el mouse
+    setIsDragging(false);
+    if (shiftPressed.current && selected) {
+      setSelectionStart({ row: selected.row, col: selected.col });
     } else {
-      // sin Shift: seleccionar solo la celda y no iniciar drag selection
-      isMouseDown.current = false;
-      setIsDragging(false);
-      setSelectionStart(null);
-      setSelectionEnd(null);
+      setSelectionStart({ row, col });
       setSelected({ row, col });
     }
+    setSelectionEnd({ row, col });
   };
 
   const handleCellMouseEnter = (row: number, col: number) => {
     if (selectionStart) {
       setSelectionEnd({ row, col });
     }
-    if (isMouseDown.current && shiftPressed.current) {
+    // Si el usuario mantiene pulsado el ratón y mueve sobre otras celdas,
+    // marcamos que hubo un arrastre para que el click posterior no lo reinterprete.
+    if (isMouseDown.current) {
       hadDragSinceMouseDown.current = true;
     }
   };
