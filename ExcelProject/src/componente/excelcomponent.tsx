@@ -113,7 +113,8 @@ const ExcelComponent: React.FC = () => {
     };
 
     const inputRef = useRef<HTMLInputElement | null>(null);
-    const [showOverflowPreview, setShowOverflowPreview] = useState(false);
+    const [hasOverflow, setHasOverflow] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     useEffect(() => {
       if (!inputRef.current) return;
@@ -121,23 +122,24 @@ const ExcelComponent: React.FC = () => {
       const check = () => {
         try {
           const over = el.scrollWidth > el.clientWidth + 4; // small tolerance
-          setShowOverflowPreview(!!over && !!isSelected && !isEditing.current);
+          setHasOverflow(!!over);
         } catch (err) {
-          setShowOverflowPreview(false);
+          setHasOverflow(false);
         }
       };
       check();
       const ro = new ResizeObserver(check);
       ro.observe(el);
       return () => ro.disconnect();
-    }, [local, isSelected, width]);
+    }, [local, width]);
 
     return (
       <td rowSpan={rowSpan} colSpan={colSpan} data-cell-row={row} data-cell-col={col}
         className={`p-0 relative ${isSelected || isMultiSelected || isDragging ? 'ring-2 ring-blue-400 bg-blue-50' : 'border border-gray-200'}`}
         style={{ width, height }}
         onMouseDown={() => onMouseDown(row, col)}
-        onMouseEnter={() => onMouseEnter(row, col)}
+        onMouseEnter={() => { onMouseEnter(row, col); setIsHovered(true); }}
+        onMouseLeave={() => setIsHovered(false)}
         onMouseUp={() => onMouseUp()}
         onClick={() => onClick(row, col)}>
         <input
@@ -151,8 +153,9 @@ const ExcelComponent: React.FC = () => {
           className="w-full h-full px-2 bg-transparent focus:outline-none text-sm cursor-text"
           tabIndex={0}
         />
-        {showOverflowPreview && (
+        {(hasOverflow && (isSelected || isHovered) && !isEditing.current) && (
           <div className="absolute left-0 top-0 z-50 p-2 bg-white border rounded shadow-md text-sm max-w-[400px] break-words">
+            <div className="text-xs text-gray-500 mb-1">Texto completo</div>
             {local}
           </div>
         )}
@@ -619,10 +622,10 @@ const ExcelComponent: React.FC = () => {
     if (res && typeof res.value === 'number') {
       setComputedSum(res.value);
       // si no hay formulaText, mostrar el número en la barra (comodidad)
-      if (!formulaText || formulaText.trim() === '') setFormulaText(String(res.value));
+  // Nota: no sobreescribimos `formulaText` automáticamente con el preview, evita escribir valores inesperados al pulsar V
     } else {
       setComputedSum(null);
-      if (!formulaText || formulaText.trim() === '') setFormulaText('');
+  // no tocar formulaText
     }
   }, [selectionStart, selectionEnd, data, formulaText]);
 
@@ -630,20 +633,46 @@ const ExcelComponent: React.FC = () => {
     // si formulaText empieza con '=', evaluar y aplicar valor a celda activa (o a la celda superior-izquierda de selección)
     const res = computeFormulaResult(formulaText || null);
     if (!res) return;
-    let targetRow = selected?.row ?? 0;
-    let targetCol = selected?.col ?? 0;
+    // si hay selección principal, aplicar en la celda superior-izquierda
     if (selectionStart && selectionEnd) {
-      targetRow = Math.min(selectionStart.row, selectionEnd.row);
-      targetCol = Math.min(selectionStart.col, selectionEnd.col);
+      const targetRow = Math.min(selectionStart.row, selectionEnd.row);
+      const targetCol = Math.min(selectionStart.col, selectionEnd.col);
+      // escribir resultado en la celda adyacente a la derecha como 'Resultado = <valor>'
+      const resultCol = targetCol + 1;
+      if (resultCol >= data[0].length) {
+        // ampliar tabla con una columna adicional
+        setData(prev => prev.map(r => [...r, '']));
+        setColWidths(prev => [...prev, 96]);
+      }
+      setData(prev => {
+        const next = prev.map(r => [...r]);
+        next[targetRow][resultCol] = `Resultado = ${res.value}`;
+        return next;
+      });
+      setSelected({ row: targetRow, col: resultCol });
+      setSelectionStart(null);
+      setSelectionEnd(null);
+      setFormulaText(String(res.value));
+      return;
+    }
+
+  // no aplicamos a extraSelections automáticamente para evitar efectos inesperados
+
+    // fallback: aplicar en la celda seleccionada
+    const targetRow = selected?.row ?? 0;
+    const targetCol = selected?.col ?? 0;
+    // escribir resultado en la celda adyacente a la derecha si es posible
+    const resultCol = targetCol + 1;
+    if (resultCol >= data[0].length) {
+      setData(prev => prev.map(r => [...r, '']));
+      setColWidths(prev => [...prev, 96]);
     }
     setData(prev => {
       const next = prev.map(r => [...r]);
-      next[targetRow][targetCol] = String(res.value);
+      next[targetRow][resultCol] = `Resultado = ${res.value}`;
       return next;
     });
-    setSelected({ row: targetRow, col: targetCol });
-    setSelectionStart(null);
-    setSelectionEnd(null);
+    setSelected({ row: targetRow, col: resultCol });
     setFormulaText(String(res.value));
   };
 
@@ -652,6 +681,8 @@ const ExcelComponent: React.FC = () => {
     setComputedSum(null);
     setSelectionStart(null);
     setSelectionEnd(null);
+  setExtraSelections([]);
+  setSelected(null);
   };
 
   // Quick action: build formula from current selection and apply (SUM/AVERAGE/COUNT)
