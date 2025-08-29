@@ -311,8 +311,12 @@ const ExcelComponent: React.FC = () => {
   // load once on mount
   useEffect(() => { loadFromLocal(); }, [loadFromLocal]);
 
-  // save whenever relevant state changes
-  useEffect(() => { saveToLocal(); }, [saveToLocal]);
+  // save whenever relevant state changes (but skip the initial run to avoid overwriting loaded data)
+  const skipFirstSave = React.useRef(true);
+  useEffect(() => {
+    if (skipFirstSave.current) { skipFirstSave.current = false; return; }
+    saveToLocal();
+  }, [saveToLocal]);
   const addConditionalFormatViaPrompt = () => {
     const type = window.prompt('Tipo de regla: gt, lt, eq, contains', 'gt') as any;
     if (!type) return;
