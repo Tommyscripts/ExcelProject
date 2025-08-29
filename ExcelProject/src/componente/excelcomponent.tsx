@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import TooltipCooldown from './TooltipCooldown';
+import TooltipCooldown from './Auxiliares/TooltipCooldown';
 import { FaTrash } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 
