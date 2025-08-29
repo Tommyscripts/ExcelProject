@@ -16,9 +16,6 @@ const createInitialData = (rows: number, cols: number) =>
 const ExcelComponent: React.FC = () => {
   // Default = light (false). We ignore any previous localStorage value on load to ensure default light.
   const _initDark = false;
-  try {
-    if (typeof document !== 'undefined') document.documentElement.classList.remove('dark');
-  } catch (e) { /* ignore */ }
   const [darkMode, setDarkMode] = useState<boolean>(_initDark);
 
   // Cambia la clase del body para modo claro/oscuro
@@ -487,6 +484,29 @@ const ExcelComponent: React.FC = () => {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [selectionStart, selectionEnd, selected, copiedRange, data]);
+
+  // Escucha global para borrar contenido con la tecla Supr/Delete
+  React.useEffect(() => {
+    const onDel = (e: KeyboardEvent) => {
+      // Solo si no hay meta/ctrl (no interferir con atajos como Ctrl+Delete)
+      if (e.ctrlKey || e.metaKey) return;
+      if (e.key === 'Delete' || e.key === 'Del') {
+        if (!selected) return;
+        e.preventDefault();
+        pushHistory();
+        setData(prev => {
+          const next = prev.map(r => [...r]);
+          if (next[selected.row] && next[selected.row][selected.col] != null) next[selected.row][selected.col] = '';
+          return next;
+        });
+        // Si la celda formaba parte de un merge, dejamos el merge pero limpiamos el contenido del bloque.
+        // Alternativa: separar merge; por ahora solo limpiamos la celda activa.
+        showToast('Contenido de la celda eliminado');
+      }
+    };
+    window.addEventListener('keydown', onDel);
+    return () => window.removeEventListener('keydown', onDel);
+  }, [selected, pushHistory]);
 
   // Aplica orden usando parámetros (reutiliza la lógica existente)
   const sortRangeByColumn = (colIdx: number, dir: 'asc' | 'desc') => {
