@@ -1813,11 +1813,11 @@ const ExcelComponent: React.FC = () => {
           <h3 className="font-bold mb-2">Sort Range</h3>
           <div className="mb-2">
             <label className="block text-xs">Columna (ej: A)</label>
-            <input value={sortColInput} onChange={e=>setSortColInput(e.target.value)} className="w-full px-2 py-1 border rounded" />
+            <input value={sortColInput} onChange={e=>setSortColInput(e.target.value)} className="w-full px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
           </div>
           <div className="mb-3">
             <label className="block text-xs">Dirección</label>
-            <select value={sortDirection} onChange={e=>setSortDirection(e.target.value as any)} className="w-full px-2 py-1 border rounded">
+            <select value={sortDirection} onChange={e=>setSortDirection(e.target.value as any)} className="w-full px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
               <option value="asc">Ascendente</option>
               <option value="desc">Descendente</option>
             </select>
@@ -1836,7 +1836,7 @@ const ExcelComponent: React.FC = () => {
           <h3 className="font-bold mb-2">Add Conditional Format</h3>
           <div className="mb-2">
             <label className="block text-xs">Tipo</label>
-            <select value={cfTypeInput} onChange={e=>setCfTypeInput(e.target.value as any)} className="w-full px-2 py-1 border rounded">
+            <select value={cfTypeInput} onChange={e=>setCfTypeInput(e.target.value as any)} className="w-full px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
               <option value="gt">Greater than (gt)</option>
               <option value="lt">Less than (lt)</option>
               <option value="eq">Equals (eq)</option>
@@ -1845,11 +1845,11 @@ const ExcelComponent: React.FC = () => {
           </div>
           <div className="mb-2">
             <label className="block text-xs">Valor</label>
-            <input value={cfValueInput} onChange={e=>setCfValueInput(e.target.value)} className="w-full px-2 py-1 border rounded" />
+            <input value={cfValueInput} onChange={e=>setCfValueInput(e.target.value)} className="w-full px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
           </div>
           <div className="mb-2">
             <label className="block text-xs">Scope</label>
-            <select value={cfScopeInput} onChange={e=>setCfScopeInput(e.target.value as any)} className="w-full px-2 py-1 border rounded">
+            <select value={cfScopeInput} onChange={e=>setCfScopeInput(e.target.value as any)} className="w-full px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
               <option value="selection">Selección actual</option>
               <option value="sheet">Toda la hoja</option>
             </select>
