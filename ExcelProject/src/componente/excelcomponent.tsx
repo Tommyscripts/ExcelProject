@@ -1350,10 +1350,13 @@ const ExcelComponent: React.FC = () => {
           }
         }
         // limpiar selección visual
-        setSelectionStart(null);
-        setSelectionEnd(null);
-        setExtraSelections([]);
-        setSelected(null);
+  // eliminar merges que intersecten la región limpiada
+  setMerges(prev => prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2)));
+  setSelectionStart(null);
+  setSelectionEnd(null);
+  setExtraSelections([]);
+  setSelected(null);
+  showToast('Rango limpiado y merges separados si existían');
         return next;
       }
       // selecciones adicionales
@@ -1366,7 +1369,18 @@ const ExcelComponent: React.FC = () => {
           }
         }
         setExtraSelections([]);
+        // eliminar merges que intersecten cualquiera de las selecciones adicionales
+        setMerges(prev => prev.filter(m => {
+          for (const s of extraSelections) {
+            const r1 = s.r1, r2 = s.r2, c1 = s.c1, c2 = s.c2;
+            if (!((m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2))) {
+              return false; // intersecta -> quitar
+            }
+          }
+          return true;
+        }));
         setSelected(null);
+        showToast('Selecciones limpiadas y merges separados si existían');
         return next;
       }
       // celda individual seleccionada
@@ -1374,17 +1388,23 @@ const ExcelComponent: React.FC = () => {
         const { row, col } = selected;
         if (next[row] && next[row][col] != null) next[row][col] = '';
         setSelected(null);
-        return next;
+  // eliminar cualquier merge que contenga esta celda
+  setMerges(prev => prev.filter(m => !(row >= m.r && row < m.r + m.rows && col >= m.c && col < m.c + m.cols)));
+  showToast('Celda limpiada y merge separado si existía');
+  return next;
       }
       // sin selección: confirmar y limpiar toda la hoja
       if (!window.confirm('No hay selección. ¿Limpiar toda la hoja?')) return prev;
       for (let rr = 0; rr < next.length; rr++) {
         for (let cc = 0; cc < next[rr].length; cc++) next[rr][cc] = '';
       }
+      // borrar todos los merges
+      setMerges([]);
       setSelected(null);
       setSelectionStart(null);
       setSelectionEnd(null);
       setExtraSelections([]);
+      showToast('Hoja completamente limpiada');
       return next;
     });
   };
