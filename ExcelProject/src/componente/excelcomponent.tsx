@@ -1500,9 +1500,9 @@ const ExcelComponent: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <label className="text-sm">Freeze R:</label>
-              <input type="number" value={freezeRows} onChange={e=>setFreezeRows(Number(e.target.value)||0)} className="w-16 px-2 py-1 border rounded text-sm" />
-              <label className="text-sm">C:</label>
-              <input type="number" value={freezeCols} onChange={e=>setFreezeCols(Number(e.target.value)||0)} className="w-16 px-2 py-1 border rounded text-sm" />
+                <input type="number" value={freezeRows} onChange={e=>setFreezeRows(Number(e.target.value)||0)} className="w-16 px-2 py-1 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
+                <label className="text-sm">C:</label>
+                <input type="number" value={freezeCols} onChange={e=>setFreezeCols(Number(e.target.value)||0)} className="w-16 px-2 py-1 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
             </div>
 
             <div className="flex items-center gap-2">

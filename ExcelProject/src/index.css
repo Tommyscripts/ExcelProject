@@ -1,10 +1,16 @@
-/* Using Tailwind CDN in index.html for development; keep simple body colors here */
-body {
-	background-color: #ffffff; /* bg-white */
-	color: #111827; /* text-gray-900 */
-}
+@import 'tailwindcss/base';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-.dark body {
-	background-color: #111827; /* bg-gray-900 */
-	color: #f3f4f6; /* text-gray-100 */
+/* Base body colors (avoid @apply to prevent resolution issues) */
+@layer base {
+	body {
+		background-color: #ffffff;
+		color: #111827;
+	}
+	.dark body {
+		background-color: #111827;
+		color: #f3f4f6;
+	}
 }
