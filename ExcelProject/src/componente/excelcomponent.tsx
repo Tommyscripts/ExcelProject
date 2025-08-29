@@ -14,6 +14,16 @@ const createInitialData = (rows: number, cols: number) =>
   Array.from({ length: rows }, () => Array(cols).fill(''));
 
 const ExcelComponent: React.FC = () => {
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Cambia la clase del body para modo claro/oscuro
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+  }, [darkMode]);
   const [data, setData] = useState<string[][]>(createInitialData(INITIAL_ROWS, INITIAL_COLS));
   const [selected, setSelected] = useState<{ row: number; col: number } | null>({ row: 0, col: 0 });
   // Para selección múltiple
@@ -1118,11 +1128,62 @@ const ExcelComponent: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // Estilos globales para modo oscuro/claro
+  useEffect(() => {
+    if (!document.getElementById('darkmode-styles')) {
+      const style = document.createElement('style');
+      style.id = 'darkmode-styles';
+      style.innerHTML = `
+        body.dark-mode, .dark-mode {
+          background: #23272f !important;
+          color: #f1f1f1 !important;
+        }
+        .excel-table-container.dark, .excel-table-container.dark table, .excel-table-container.dark td, .excel-table-container.dark th {
+          background: #23272f !important;
+          color: #f1f1f1 !important;
+          border-color: #444 !important;
+        }
+        .excel-table-container.dark input, .excel-table-container.dark select, .excel-table-container.dark textarea {
+          background: #23272f !important;
+          color: #f1f1f1 !important;
+          border: 1px solid #444 !important;
+        }
+        .undo-btn.dark, .redo-btn.dark {
+          background: #444 !important;
+          color: #ffe066 !important;
+          border: 1px solid #ffe066 !important;
+        }
+        .undo-btn, .redo-btn {
+          background: #ffe066;
+          color: #222;
+          border: 1px solid #ffe066;
+        }
+        .formula-bar.dark {
+          background: #23272f !important;
+          color: #ffe066 !important;
+          border: 1px solid #ffe066 !important;
+        }
+        .formula-bar {
+          background: #fff;
+          color: #222;
+          border: 1px solid #ffe066;
+        }
+        .toggle-darkmode-btn {
+          transition: background 0.2s, color 0.2s;
+        }
+        .formula-bar-container.dark {
+          background: #23272f !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   return (
-    <div className="bg-gray-50 min-h-screen p-6">
-      <div className="max-w-full mx-auto">
+    <div className={"min-h-screen p-6" + (darkMode ? " dark-mode" : " bg-gray-50") }>
+  <div className="max-w-full mx-auto" style={{ position: 'relative' }}>
         <div className="flex items-center justify-between mb-3 gap-3">
-          <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2">
             <TooltipCooldown content="Agrega una nueva fila al final de la tabla" cooldown={1500}>
               <button onClick={addRow} className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition text-sm">+ Fila</button>
             </TooltipCooldown>
@@ -1135,6 +1196,7 @@ const ExcelComponent: React.FC = () => {
               ))}
             </select>
           </div>
+
           <div className="flex items-center gap-2">
             <TooltipCooldown content="Agrega una nueva columna al final de la tabla" cooldown={1500}>
               <button onClick={addCol} className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition text-sm">+ Col</button>
@@ -1150,20 +1212,32 @@ const ExcelComponent: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <TooltipCooldown content="Importa datos desde un archivo Excel (.xlsx, .xls, .csv)" cooldown={1500}>
-              <button onClick={() => fileInputRef.current?.click()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-3 py-1 rounded text-sm">Importar Excel</button>
+              <button onClick={() => fileInputRef.current?.click()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-5 py-2 rounded-lg text-base shadow-md border border-yellow-700">Importar Excel</button>
             </TooltipCooldown>
             <TooltipCooldown content="Exporta la tabla actual a un archivo Excel (.xlsx)" cooldown={1500}>
-              <button onClick={exportToExcel} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-3 py-1 rounded text-sm">Exportar Excel</button>
+              <button onClick={exportToExcel} className="bg-blue-500 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-base shadow-md border border-blue-800">Exportar Excel</button>
             </TooltipCooldown>
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={onFileInputChange} style={{ display: 'none' }} />
             <TooltipCooldown content="Limpia las celdas seleccionadas o toda la hoja si no hay selección" cooldown={1500}>
               <button
                 onClick={() => clearSelectedOrAll()}
-                className="bg-gray-700 hover:bg-gray-800 text-white font-semibold px-3 py-1 rounded text-sm"
+                className="bg-gray-800 hover:bg-gray-900 text-white font-bold px-5 py-2 rounded-lg text-base shadow-md border border-gray-900"
               >
                 Clean
               </button>
             </TooltipCooldown>
+          </div>
+          <div style={{ position: 'absolute', right: 48, top: 64, zIndex: 1 }}>
+            <button
+              className="toggle-darkmode-btn"
+        style={{ fontSize: 26, background: darkMode ? '#222' : '#ffe066', color: darkMode ? '#ffe066' : '#222', border: '3px solid #ffe066', borderRadius: '50%', width: 46, height: 46, cursor: 'pointer', boxShadow: '0 2px 8px #0003', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title={darkMode ? "Modo claro" : "Modo oscuro"}
+              onClick={() => setDarkMode((d) => !d)}
+            >
+              <span role="img" aria-label="Modo oscuro/Claro">💡</span>
+            </button>
+          </div>
+          {/* eliminado botón duplicado */}
           </div>
         </div>
 
@@ -1171,10 +1245,10 @@ const ExcelComponent: React.FC = () => {
           <div className="flex items-center gap-3 mb-3">
             <div className="flex items-center gap-2">
               <TooltipCooldown content="Deshace la última acción (Ctrl+Z)" cooldown={1500}>
-                <button onClick={() => { undo(); }} disabled={!history.length} className="px-2 py-1 bg-gray-200 rounded">Undo</button>
+                <button onClick={() => { undo(); }} disabled={!history.length} className={"px-2 py-1 rounded undo-btn" + (darkMode ? " dark" : "")}>Undo</button>
               </TooltipCooldown>
               <TooltipCooldown content="Rehace la última acción deshecha (Ctrl+Y)" cooldown={1500}>
-                <button onClick={() => { redo(); }} disabled={!future.length} className="px-2 py-1 bg-gray-200 rounded">Redo</button>
+                <button onClick={() => { redo(); }} disabled={!future.length} className={"px-2 py-1 rounded redo-btn" + (darkMode ? " dark" : "")}>Redo</button>
               </TooltipCooldown>
             </div>
 
@@ -1222,13 +1296,14 @@ const ExcelComponent: React.FC = () => {
         </div>
 
         {/* Barra de fórmulas similar a Excel */}
-        <div className="mb-3 bg-white border rounded p-2 shadow-sm flex items-center gap-3">
-          <div className="text-sm text-gray-600 w-16 text-center font-medium">fx</div>
+        <div className={"mb-3 border rounded p-2 shadow-sm flex items-center gap-3 formula-bar-container" + (darkMode ? " dark" : "") } style={{ background: darkMode ? '#23272f' : '#fff' }}>
+          <div className="text-sm w-16 text-center font-medium" style={{ color: darkMode ? '#ffe066' : '#666' }}>fx</div>
           <textarea
             value={formulaText}
             onChange={e => setFormulaText(e.target.value)}
-            className="flex-1 p-2 border rounded resize-none h-10 text-sm"
+            className={"flex-1 p-2 border rounded resize-none h-10 text-sm formula-bar" + (darkMode ? " dark" : "")}
             placeholder="Barra de fórmulas"
+            style={{ background: darkMode ? '#23272f' : '#fff', color: darkMode ? '#ffe066' : '#222', border: darkMode ? '1px solid #ffe066' : '1px solid #ccc' }}
           />
           <div className="flex items-center gap-2">
             <TooltipCooldown content="Aplica la fórmula escrita a la selección (V)" cooldown={1500}>
@@ -1254,7 +1329,7 @@ const ExcelComponent: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-auto border rounded bg-white shadow-sm">
+  <div className={"overflow-auto border rounded shadow-sm excel-table-container" + (darkMode ? " dark" : "") } style={{ background: darkMode ? '#23272f' : '#fff' }}>
           <table ref={tableRef} className="min-w-[1200px] w-full table-fixed" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead className="sticky top-0 bg-gray-100">
               <tr>
@@ -1401,8 +1476,7 @@ const ExcelComponent: React.FC = () => {
           </table>
         </div>
       </div>
-    </div>
   );
-};
+}
 
 export default ExcelComponent;
