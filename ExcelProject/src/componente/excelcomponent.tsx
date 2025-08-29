@@ -219,6 +219,8 @@ const ExcelComponent: React.FC = () => {
   const [freezeRows, setFreezeRows] = useState<number>(0);
   const [freezeCols, setFreezeCols] = useState<number>(0);
 
+  
+
   const getColLefts = useCallback(() => {
     const lefts: number[] = [];
     let acc = 40; // gutter (row header) ancho aproximado
@@ -266,6 +268,51 @@ const ExcelComponent: React.FC = () => {
   // --- Conditional Formatting (simple) ---
   type CFRule = { id: string; type: 'gt'|'lt'|'eq'|'contains'; value: string; bg?: string; color?: string; scope?: { r1:number,c1:number,r2:number,c2:number } | null };
   const [conditionalFormats, setConditionalFormats] = useState<CFRule[]>([]);
+  // --- Local storage persistence ---
+  const STORAGE_KEY = 'meloexcel_v1';
+  const loadFromLocal = useCallback(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed.data) setData(parsed.data);
+      if (parsed.merges) setMerges(parsed.merges);
+      if (parsed.colWidths) setColWidths(parsed.colWidths);
+      if (typeof parsed.darkMode === 'boolean') { setDarkMode(parsed.darkMode); }
+      if (parsed.conditionalFormats) setConditionalFormats(parsed.conditionalFormats);
+      if (typeof parsed.freezeRows === 'number') setFreezeRows(parsed.freezeRows);
+      if (typeof parsed.freezeCols === 'number') setFreezeCols(parsed.freezeCols);
+    } catch (e) {
+      console.warn('Failed to load local save:', e);
+    }
+  }, []);
+
+  const saveToLocal = useCallback(() => {
+    try {
+      const payload = {
+        data,
+        merges,
+        colWidths,
+        darkMode,
+        conditionalFormats,
+        freezeRows,
+        freezeCols,
+      };
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
+  }, [data, merges, colWidths, darkMode, conditionalFormats, freezeRows, freezeCols]);
+
+  const clearLocal = useCallback(() => {
+    try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+  }, []);
+
+  // load once on mount
+  useEffect(() => { loadFromLocal(); }, [loadFromLocal]);
+
+  // save whenever relevant state changes
+  useEffect(() => { saveToLocal(); }, [saveToLocal]);
   const addConditionalFormatViaPrompt = () => {
     const type = window.prompt('Tipo de regla: gt, lt, eq, contains', 'gt') as any;
     if (!type) return;
