@@ -915,8 +915,11 @@ const ExcelComponent: React.FC = () => {
     const rows = r2 - r1 + 1;
     const cols = c2 - c1 + 1;
     if (rows === 1 && cols === 1) return; // nada que combinar
-    // Concatenar contenidos en la celda superior-izquierda y vaciar las demás
-    setData(prev => {
+  // push history for undo
+  pushHistory();
+
+  // Concatenar contenidos en la celda superior-izquierda y vaciar las demás
+  setData(prev => {
       const next = prev.map(r => [...r]);
       const parts: string[] = [];
       for (let rr = r1; rr <= r2; rr++) {
@@ -930,15 +933,17 @@ const ExcelComponent: React.FC = () => {
       return next;
     });
 
-    // Eliminar merges que intersecten la región seleccionada
-    setMerges(prev => prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2)));
-
-    // Añadir nuevo merge
-    setMerges(prev => [...prev, { r: r1, c: c1, rows, cols }]);
-    // limpiar selección principal y adicionales
-    setSelectionStart(null);
-    setSelectionEnd(null);
-    setExtraSelections([]);
+    // Reemplazar merges que intersecten la región por el nuevo merge de forma atómica
+    setMerges(prev => {
+      const filtered = prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2));
+      return [...filtered, { r: r1, c: c1, rows, cols }];
+    });
+  // seleccionar la celda combinada y limpiar selecciones previas
+  setSelected({ row: r1, col: c1 });
+  setSelectionStart(null);
+  setSelectionEnd(null);
+  setExtraSelections([]);
+  showToast('Celdas combinadas');
   };
 
   const separateCells = () => {
@@ -948,10 +953,11 @@ const ExcelComponent: React.FC = () => {
       const r2 = Math.max(selectionStart.row, selectionEnd.row);
       const c1 = Math.min(selectionStart.col, selectionEnd.col);
       const c2 = Math.max(selectionStart.col, selectionEnd.col);
-      setMerges(prev => prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2)));
-      setSelectionStart(null);
-      setSelectionEnd(null);
-      setExtraSelections([]);
+  setMerges(prev => prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2)));
+  setSelectionStart(null);
+  setSelectionEnd(null);
+  setExtraSelections([]);
+  showToast('Celdas separadas');
       return;
     }
     // Si hay extraSelections, separar merges que intersecten cualquiera de ellas
@@ -967,12 +973,14 @@ const ExcelComponent: React.FC = () => {
         return true;
       }));
       setExtraSelections([]);
+  showToast('Celdas separadas');
       return;
     }
     // si no hay selección múltiple, separar el merge que contenga la celda seleccionada
     if (selected) {
       const { row, col } = selected;
-      setMerges(prev => prev.filter(m => !(row >= m.r && row < m.r + m.rows && col >= m.c && col < m.c + m.cols)));
+  setMerges(prev => prev.filter(m => !(row >= m.r && row < m.r + m.rows && col >= m.c && col < m.c + m.cols)));
+  showToast('Celdas separadas');
     }
   };
 
