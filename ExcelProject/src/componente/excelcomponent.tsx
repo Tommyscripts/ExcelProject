@@ -254,6 +254,67 @@ const ExcelComponent: React.FC = () => {
     setConditionalFormats(prev => [...prev, { id, type, value, bg, color: undefined, scope: null }]);
   };
 
+  // --- Mejoras UX: modales para Sort y Conditional Format + toast ---
+  const [showSortModal, setShowSortModal] = useState(false);
+  const [sortColInput, setSortColInput] = useState(getColName(selectionStart?.col ?? 0));
+  const [sortDirection, setSortDirection] = useState<'asc'|'desc'>('asc');
+
+  const [showCFModal, setShowCFModal] = useState(false);
+  const [cfTypeInput, setCfTypeInput] = useState<CFRule['type']>('gt');
+  const [cfValueInput, setCfValueInput] = useState('0');
+  const [cfColorInput, setCfColorInput] = useState('#fffbcc');
+  const [cfScopeInput, setCfScopeInput] = useState<'selection'|'sheet'>('selection');
+
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const showToast = (msg: string, ms = 2500) => {
+    setToastMsg(msg);
+    window.setTimeout(() => setToastMsg(null), ms);
+  };
+
+  // Aplica orden usando parámetros (reutiliza la lógica existente)
+  const sortRangeByColumn = (colIdx: number, dir: 'asc' | 'desc') => {
+    if (!selectionStart || !selectionEnd) { showToast('No hay selección para ordenar'); return; }
+    const r1 = Math.min(selectionStart.row, selectionEnd.row);
+    const r2 = Math.max(selectionStart.row, selectionEnd.row);
+    const c1 = Math.min(selectionStart.col, selectionEnd.col);
+    const c2 = Math.max(selectionStart.col, selectionEnd.col);
+    if (colIdx < c1 || colIdx > c2) { showToast('La columna debe estar dentro de la selección'); return; }
+    pushHistory();
+    setData(prev => {
+      const next = prev.map(r => [...r]);
+      const slice = next.slice(r1, r2 + 1);
+      slice.sort((a, b) => {
+        const va = a[colIdx] ?? '';
+        const vb = b[colIdx] ?? '';
+        const na = Number(String(va).replace(/,/g, ''));
+        const nb = Number(String(vb).replace(/,/g, ''));
+        if (!Number.isNaN(na) && !Number.isNaN(nb)) return dir === 'asc' ? na - nb : nb - na;
+        const sa = String(va);
+        const sb = String(vb);
+        return dir === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+      });
+      for (let i = r1; i <= r2; i++) next[i] = slice[i - r1];
+      return next;
+    });
+    setSelectionStart(null);
+    setSelectionEnd(null);
+    showToast('Rango ordenado');
+  };
+
+  const addConditionalFormat = (type: CFRule['type'], value: string, bg: string, scopeChoice: 'selection'|'sheet' = 'selection') => {
+    const id = String(Date.now());
+    let scope = null as null | { r1:number;c1:number;r2:number;c2:number };
+    if (scopeChoice === 'selection' && selectionStart && selectionEnd) {
+      const r1 = Math.min(selectionStart.row, selectionEnd.row);
+      const r2 = Math.max(selectionStart.row, selectionEnd.row);
+      const c1 = Math.min(selectionStart.col, selectionEnd.col);
+      const c2 = Math.max(selectionStart.col, selectionEnd.col);
+      scope = { r1, c1, r2, c2 };
+    }
+    setConditionalFormats(prev => [...prev, { id, type, value, bg, color: undefined, scope }]);
+    showToast('Formato condicional añadido');
+  };
+
   // Memoized cell component to reduce re-renders while typing
   // Defined inside component to capture types but memoized to avoid re-render when props unchanged
   const Cell = React.useMemo(() => React.memo(function CellInner(props: {
@@ -1305,13 +1366,13 @@ const ExcelComponent: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <TooltipCooldown content="Ordena el rango seleccionado por la columna actual" cooldown={1500}>
-                <button onClick={() => sortSelectionByColumn()} className="px-2 py-1 bg-indigo-500 text-white rounded text-sm">Sort Range</button>
+                <button onClick={() => { setShowSortModal(true); setSortColInput(getColName(selectionStart?.col ?? 0)); }} className="px-2 py-1 bg-indigo-500 text-white rounded text-sm">Sort Range</button>
               </TooltipCooldown>
             </div>
 
             <div className="flex items-center gap-2">
               <TooltipCooldown content="Agrega formato condicional al rango seleccionado" cooldown={1500}>
-                <button onClick={() => addConditionalFormatViaPrompt()} className="px-2 py-1 bg-pink-500 text-white rounded text-sm">Add Conditional Format</button>
+                <button onClick={() => { setShowCFModal(true); setCfTypeInput('gt'); setCfValueInput('0'); setCfColorInput('#fffbcc'); }} className="px-2 py-1 bg-pink-500 text-white rounded text-sm">Add Conditional Format</button>
               </TooltipCooldown>
             </div>
           </div>
@@ -1505,6 +1566,80 @@ const ExcelComponent: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+    {/* Modales y Toasts */}
+    {showSortModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div className="bg-white p-4 rounded shadow-lg w-80">
+          <h3 className="font-bold mb-2">Sort Range</h3>
+          <div className="mb-2">
+            <label className="block text-xs">Columna (ej: A)</label>
+            <input value={sortColInput} onChange={e=>setSortColInput(e.target.value)} className="w-full px-2 py-1 border rounded" />
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs">Dirección</label>
+            <select value={sortDirection} onChange={e=>setSortDirection(e.target.value as any)} className="w-full px-2 py-1 border rounded">
+              <option value="asc">Ascendente</option>
+              <option value="desc">Descendente</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={()=>setShowSortModal(false)} className="px-3 py-1 border rounded">Cancelar</button>
+            <button onClick={()=>{ const ci = colNameToIndex(sortColInput); setShowSortModal(false); sortRangeByColumn(ci, sortDirection); }} className="px-3 py-1 bg-indigo-600 text-white rounded">Aplicar</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {showCFModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div className="bg-white p-4 rounded shadow-lg w-80">
+          <h3 className="font-bold mb-2">Add Conditional Format</h3>
+          <div className="mb-2">
+            <label className="block text-xs">Tipo</label>
+            <select value={cfTypeInput} onChange={e=>setCfTypeInput(e.target.value as any)} className="w-full px-2 py-1 border rounded">
+              <option value="gt">Greater than (gt)</option>
+              <option value="lt">Less than (lt)</option>
+              <option value="eq">Equals (eq)</option>
+              <option value="contains">Contains</option>
+            </select>
+          </div>
+          <div className="mb-2">
+            <label className="block text-xs">Valor</label>
+            <input value={cfValueInput} onChange={e=>setCfValueInput(e.target.value)} className="w-full px-2 py-1 border rounded" />
+          </div>
+          <div className="mb-2">
+            <label className="block text-xs">Scope</label>
+            <select value={cfScopeInput} onChange={e=>setCfScopeInput(e.target.value as any)} className="w-full px-2 py-1 border rounded">
+              <option value="selection">Selección actual</option>
+              <option value="sheet">Toda la hoja</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs">Color de fondo</label>
+            <input value={cfColorInput} onChange={e=>setCfColorInput(e.target.value)} className="w-full px-2 py-1 border rounded" />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={()=>setShowCFModal(false)} className="px-3 py-1 border rounded">Cancelar</button>
+            <button
+              onClick={()=>{ setShowCFModal(false); addConditionalFormat(cfTypeInput, cfValueInput, cfColorInput, cfScopeInput); }}
+              disabled={cfScopeInput === 'selection' && !(selectionStart && selectionEnd)}
+              title={cfScopeInput === 'selection' && !(selectionStart && selectionEnd) ? 'Selecciona un rango antes de añadir formato condicional' : 'Añadir formato condicional'}
+              className={
+                (cfScopeInput === 'selection' && !(selectionStart && selectionEnd))
+                ? 'px-3 py-1 bg-pink-300 text-white rounded opacity-60 cursor-not-allowed'
+                : 'px-3 py-1 bg-pink-600 text-white rounded'
+              }
+            >Añadir</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {toastMsg && (
+      <div className="fixed right-4 bottom-6 z-60 bg-black text-white px-3 py-2 rounded shadow">{toastMsg}</div>
+    )}
+
       </div>
   );
 }
