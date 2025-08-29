@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import TooltipCooldown from './Auxiliares/TooltipCooldown';
-import { FaTrash } from 'react-icons/fa';
+import { FaTrash, FaCopy, FaPaste, FaExchangeAlt } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 
 const INITIAL_COLS = 22; // A-V
@@ -14,15 +14,36 @@ const createInitialData = (rows: number, cols: number) =>
   Array.from({ length: rows }, () => Array(cols).fill(''));
 
 const ExcelComponent: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  // Default = light (false). We ignore any previous localStorage value on load to ensure default light.
+  const _initDark = false;
+  try {
+    if (typeof document !== 'undefined') document.documentElement.classList.remove('dark');
+  } catch (e) { /* ignore */ }
+  const [darkMode, setDarkMode] = useState<boolean>(_initDark);
 
   // Cambia la clase del body para modo claro/oscuro
   useEffect(() => {
+    const root = document.documentElement;
     if (darkMode) {
-      document.body.classList.add("dark-mode");
+      root.classList.add('dark');
+      try { window.localStorage?.setItem('darkMode', 'true'); } catch (e) {}
     } else {
-      document.body.classList.remove("dark-mode");
+      root.classList.remove('dark');
+      try { window.localStorage?.setItem('darkMode', 'false'); } catch (e) {}
     }
+  }, [darkMode]);
+
+  // Ensure body inline background/color reflect the current mode so default is light.
+  useEffect(() => {
+    try {
+      if (darkMode) {
+        document.body.style.background = '#0f1720'; // gray-900
+        document.body.style.color = '#f8fafc';
+      } else {
+        document.body.style.background = '#ffffff';
+        document.body.style.color = '#111827';
+      }
+    } catch (e) { /* ignore */ }
   }, [darkMode]);
   const [data, setData] = useState<string[][]>(createInitialData(INITIAL_ROWS, INITIAL_COLS));
   const [selected, setSelected] = useState<{ row: number; col: number } | null>({ row: 0, col: 0 });
@@ -271,6 +292,151 @@ const ExcelComponent: React.FC = () => {
     window.setTimeout(() => setToastMsg(null), ms);
   };
 
+  // Clipboard for copy/paste ranges
+  const [copiedRange, setCopiedRange] = useState<string[][] | null>(null);
+  const [pasteHighlight, setPasteHighlight] = useState<{ r1:number;c1:number;r2:number;c2:number } | null>(null);
+  const [pasteFade, setPasteFade] = useState<boolean>(false);
+  const serializeRange = (arr: string[][]) => arr.map(r => r.join('\t')).join('\n');
+  const parseSerialized = (s: string) => s.split(/\r?\n/).map(row => row.split('\t'));
+
+  // Copy selection to internal clipboard and try system clipboard
+  const copySelectionToClipboard = async () => {
+    if (!selectionStart || !selectionEnd) { showToast('No hay selección para copiar'); return; }
+    const r1 = Math.min(selectionStart.row, selectionEnd.row);
+    const r2 = Math.max(selectionStart.row, selectionEnd.row);
+    const c1 = Math.min(selectionStart.col, selectionEnd.col);
+    const c2 = Math.max(selectionStart.col, selectionEnd.col);
+    const out: string[][] = [];
+    for (let rr = r1; rr <= r2; rr++) {
+      const row: string[] = [];
+      for (let cc = c1; cc <= c2; cc++) {
+        row.push(String(data[rr] && data[rr][cc] != null ? data[rr][cc] : ''));
+      }
+      out.push(row);
+    }
+    setCopiedRange(out);
+    const txt = serializeRange(out);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(txt);
+    } catch (e) {
+      // ignore
+    }
+    showToast('Copiado');
+  };
+
+  // Paste from internal or system clipboard at selected cell
+  const pasteClipboardAtSelection = async () => {
+    if (!selected) { showToast('Selecciona una celda para pegar'); return; }
+    let toPaste: string[][] | null = copiedRange;
+    if (!toPaste) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const txt = await navigator.clipboard.readText();
+          if (txt) toPaste = parseSerialized(txt);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    if (!toPaste) { showToast('No hay datos en el portapapeles'); return; }
+    const startRow = selected.row;
+    const startCol = selected.col;
+    pushHistory();
+    setData(prev => {
+      const next = prev.map(r => [...r]);
+      const needCols = Math.max(0, startCol + toPaste[0].length - next[0].length);
+      if (needCols > 0) {
+        for (let i = 0; i < needCols; i++) for (let rr = 0; rr < next.length; rr++) next[rr].push('');
+      }
+      const needRows = Math.max(0, startRow + toPaste.length - next.length);
+      if (needRows > 0) {
+        for (let i = 0; i < needRows; i++) next.push(Array(next[0].length).fill(''));
+      }
+      for (let r = 0; r < toPaste.length; r++) {
+        for (let c = 0; c < toPaste[r].length; c++) {
+          const rr = startRow + r;
+          const cc = startCol + c;
+          next[rr][cc] = toPaste[r][c];
+        }
+      }
+      return next;
+    });
+  // highlight temporal con fade
+  setPasteHighlight({ r1: startRow, c1: startCol, r2: startRow + toPaste.length - 1, c2: startCol + toPaste[0].length - 1 });
+  setPasteFade(false);
+  // trigger fade shortly before clearing
+  window.setTimeout(() => setPasteFade(true), 1100);
+  window.setTimeout(() => { setPasteHighlight(null); setPasteFade(false); }, 1500);
+  showToast('Pegado');
+  };
+
+  // Paste transposed (rows<->cols)
+  const pasteTransposedAtSelection = async () => {
+    if (!selected) { showToast('Selecciona una celda para pegar'); return; }
+    let toPaste: string[][] | null = copiedRange;
+    if (!toPaste) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const txt = await navigator.clipboard.readText();
+          if (txt) toPaste = parseSerialized(txt);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    if (!toPaste) { showToast('No hay datos en el portapapeles'); return; }
+    const startRow = selected.row;
+    const startCol = selected.col;
+    pushHistory();
+    setData(prev => {
+      const next = prev.map(r => [...r]);
+      const transRows = toPaste[0].length;
+      const transCols = toPaste.length;
+      const needCols = Math.max(0, startCol + transCols - next[0].length);
+      if (needCols > 0) {
+        for (let i = 0; i < needCols; i++) for (let rr = 0; rr < next.length; rr++) next[rr].push('');
+      }
+      const needRows = Math.max(0, startRow + transRows - next.length);
+      if (needRows > 0) {
+        for (let i = 0; i < needRows; i++) next.push(Array(next[0].length).fill(''));
+      }
+      for (let r = 0; r < transRows; r++) {
+        for (let c = 0; c < transCols; c++) {
+          const rr = startRow + r;
+          const cc = startCol + c;
+          next[rr][cc] = toPaste[c][r];
+        }
+      }
+      return next;
+    });
+  // highlight temporal para transposed con fade
+  setPasteHighlight({ r1: startRow, c1: startCol, r2: startRow + (toPaste[0].length) - 1, c2: startCol + (toPaste.length) - 1 });
+  setPasteFade(false);
+  window.setTimeout(() => setPasteFade(true), 1100);
+  window.setTimeout(() => { setPasteHighlight(null); setPasteFade(false); }, 1500);
+  showToast('Pegado (transpuesto)');
+  };
+
+  // Global keyboard handlers for Ctrl+C / Ctrl+V
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const meta = isMac ? e.metaKey : e.ctrlKey;
+      if (!meta) return;
+      if (e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        copySelectionToClipboard();
+      }
+      if (e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+        if (e.shiftKey) pasteTransposedAtSelection();
+        else pasteClipboardAtSelection();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectionStart, selectionEnd, selected, copiedRange, data]);
+
   // Aplica orden usando parámetros (reutiliza la lógica existente)
   const sortRangeByColumn = (colIdx: number, dir: 'asc' | 'desc') => {
     if (!selectionStart || !selectionEnd) { showToast('No hay selección para ordenar'); return; }
@@ -431,7 +597,7 @@ const ExcelComponent: React.FC = () => {
 
     return (
       <td rowSpan={rowSpan} colSpan={colSpan} data-cell-row={row} data-cell-col={col}
-  className={`p-0 relative ${isSelected || isMultiSelected || isDragging ? 'ring-2 ring-blue-400 bg-blue-50' : 'border border-gray-200'} ${extraClass}`}
+  className={`p-0 relative ${isSelected || isMultiSelected || isDragging ? 'ring-2 ring-blue-400 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-50 dark:text-white' : 'border border-gray-200 dark:border-gray-700'} ${extraClass}`}
   style={{ width, height, ...(extraStyle || {}) }}
         onMouseDown={() => onMouseDown(row, col)}
         onMouseEnter={() => {
@@ -475,7 +641,7 @@ const ExcelComponent: React.FC = () => {
           setShowTooltip(false);
           onClick(row, col);
         }}>
-        <input
+  <input
           ref={inputRef}
           type="text"
           value={local}
@@ -498,11 +664,11 @@ const ExcelComponent: React.FC = () => {
           onFocus={handleFocus}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className="w-full h-full px-2 bg-transparent focus:outline-none text-sm cursor-text"
+          className="w-full h-full px-2 bg-transparent focus:outline-none text-sm cursor-text text-gray-900 dark:text-gray-100"
           tabIndex={0}
         />
   {(showTooltip && !isEditing.current && String(local).trim() !== '') && (
-          <div className="absolute left-0 top-0 z-50 p-2 bg-white border rounded shadow-md text-sm max-w-[400px] break-words">
+          <div className="absolute left-0 top-0 z-50 p-2 bg-white border rounded shadow-md text-sm max-w-[400px] break-words dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
             <div className="text-xs text-gray-500 mb-1">Texto completo</div>
             {local}
           </div>
@@ -1168,10 +1334,9 @@ const ExcelComponent: React.FC = () => {
   const computeCellStyles = (r:number,c:number) => {
     let style: React.CSSProperties = {};
     let cls = '';
-    // search matches
+    // search matches -> use tailwind ring
     if (searchMatches.find(m=>m.row===r && m.col===c)) {
-      cls += ' search-match';
-      style.outline = '2px solid rgba(255,165,0,0.7)';
+      cls += ' ring-2 ring-orange-400/70';
     }
     // conditional formats
     for (const cf of conditionalFormats) {
@@ -1183,6 +1348,16 @@ const ExcelComponent: React.FC = () => {
       if (cf.type === 'lt') { if (!Number.isNaN(Number(cellVal)) && Number(cellVal) < Number(cf.value)) { style.background = cf.bg; } }
       if (cf.type === 'eq') { if (cellVal === cf.value) style.background = cf.bg; }
       if (cf.type === 'contains') { if (cellVal.indexOf(cf.value) !== -1) style.background = cf.bg; }
+    }
+    // highlight temporal después de pegar
+    if (pasteHighlight) {
+      if (r >= pasteHighlight.r1 && r <= pasteHighlight.r2 && c >= pasteHighlight.c1 && c <= pasteHighlight.c2) {
+        // use tailwind ring + translucent bg for highlight and a fade class
+        cls += ' ring-4 ring-emerald-400/80';
+        if (!style.background) style.background = 'rgba(0,200,120,0.12)';
+        if (pasteFade) cls += ' opacity-0 transition-opacity duration-700';
+        else cls += ' transition-opacity duration-700 opacity-100';
+      }
     }
     return { style, cls } as any;
   };
@@ -1220,59 +1395,11 @@ const ExcelComponent: React.FC = () => {
   };
 
   // Estilos globales para modo oscuro/claro
-  useEffect(() => {
-    if (!document.getElementById('darkmode-styles')) {
-      const style = document.createElement('style');
-      style.id = 'darkmode-styles';
-      style.innerHTML = `
-        body.dark-mode, .dark-mode {
-          background: #23272f !important;
-          color: #f1f1f1 !important;
-        }
-        .excel-table-container.dark, .excel-table-container.dark table, .excel-table-container.dark td, .excel-table-container.dark th {
-          background: #23272f !important;
-          color: #f1f1f1 !important;
-          border-color: #444 !important;
-        }
-        .excel-table-container.dark input, .excel-table-container.dark select, .excel-table-container.dark textarea {
-          background: #23272f !important;
-          color: #f1f1f1 !important;
-          border: 1px solid #444 !important;
-        }
-        .undo-btn.dark, .redo-btn.dark {
-          background: #444 !important;
-          color: #ffe066 !important;
-          border: 1px solid #ffe066 !important;
-        }
-        .undo-btn, .redo-btn {
-          background: #ffe066;
-          color: #222;
-          border: 1px solid #ffe066;
-        }
-        .formula-bar.dark {
-          background: #23272f !important;
-          color: #ffe066 !important;
-          border: 1px solid #ffe066 !important;
-        }
-        .formula-bar {
-          background: #fff;
-          color: #222;
-          border: 1px solid #ffe066;
-        }
-        .toggle-darkmode-btn {
-          transition: background 0.2s, color 0.2s;
-        }
-        .formula-bar-container.dark {
-          background: #23272f !important;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }, []);
+  // We rely on Tailwind `dark:` variants for styling. No injected CSS needed.
 
   return (
-    <div className={"min-h-screen p-6" + (darkMode ? " dark-mode" : " bg-gray-50") }>
-  <div className="max-w-full mx-auto" style={{ position: 'relative' }}>
+    <div className={"min-h-screen p-6 bg-gray-50 dark:bg-gray-900 dark:text-gray-100"}>
+  <div className="max-w-full mx-auto relative">
         <div className="flex items-center justify-between mb-3 gap-3">
     <div className="flex items-center gap-2">
             <TooltipCooldown content="Agrega una nueva fila al final de la tabla" cooldown={1500}>
@@ -1281,7 +1408,7 @@ const ExcelComponent: React.FC = () => {
             <TooltipCooldown content="Elimina la fila seleccionada" cooldown={1500}>
               <button onClick={deleteRow} className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition text-sm flex items-center"><FaTrash className="mr-1" />Fila</button>
             </TooltipCooldown>
-            <select value={selectedRow} onChange={e => setSelectedRow(Number(e.target.value))} className="px-2 py-1 rounded border text-sm">
+            <select value={selectedRow} onChange={e => setSelectedRow(Number(e.target.value))} className="px-2 py-1 rounded border text-sm bg-white dark:bg-gray-700 dark:text-gray-100">
               {data.map((_, idx) => (
                 <option key={idx} value={idx}>{`Fila ${idx + 1}`}</option>
               ))}
@@ -1295,7 +1422,7 @@ const ExcelComponent: React.FC = () => {
             <TooltipCooldown content="Elimina la columna seleccionada" cooldown={1500}>
               <button onClick={deleteCol} className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition text-sm flex items-center"><FaTrash className="mr-1" />Col</button>
             </TooltipCooldown>
-            <select value={selectedCol} onChange={e => setSelectedCol(Number(e.target.value))} className="px-2 py-1 rounded border text-sm">
+            <select value={selectedCol} onChange={e => setSelectedCol(Number(e.target.value))} className="px-2 py-1 rounded border text-sm bg-white dark:bg-gray-700 dark:text-gray-100">
               {data[0].map((_, idx) => (
                 <option key={idx} value={idx}>{getColName(idx)}</option>
               ))}
@@ -1308,7 +1435,7 @@ const ExcelComponent: React.FC = () => {
             <TooltipCooldown content="Exporta la tabla actual a un archivo Excel (.xlsx)" cooldown={1500}>
               <button onClick={exportToExcel} className="bg-blue-500 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-base shadow-md border border-blue-800">Exportar Excel</button>
             </TooltipCooldown>
-            <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={onFileInputChange} style={{ display: 'none' }} />
+            <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={onFileInputChange} className="hidden" />
             <TooltipCooldown content="Limpia las celdas seleccionadas o toda la hoja si no hay selección" cooldown={1500}>
               <button
                 onClick={() => clearSelectedOrAll()}
@@ -1318,14 +1445,13 @@ const ExcelComponent: React.FC = () => {
               </button>
             </TooltipCooldown>
           </div>
-          <div style={{ position: 'absolute', right: 48, top: 64, zIndex: 1 }}>
+          <div className="absolute right-12 top-16 z-10">
             <button
-              className="toggle-darkmode-btn"
-        style={{ fontSize: 26, background: darkMode ? '#222' : '#ffe066', color: darkMode ? '#ffe066' : '#222', border: '3px solid #ffe066', borderRadius: '50%', width: 46, height: 46, cursor: 'pointer', boxShadow: '0 2px 8px #0003', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              className={"w-11 h-11 rounded-full flex items-center justify-center shadow-md border-4 transition-colors " + (darkMode ? 'bg-gray-800 border-amber-400 text-amber-300' : 'bg-amber-300 border-amber-400 text-gray-800')}
               title={darkMode ? "Modo claro" : "Modo oscuro"}
               onClick={() => setDarkMode((d) => !d)}
             >
-              <span role="img" aria-label="Modo oscuro/Claro">💡</span>
+              <span className="text-xl">💡</span>
             </button>
           </div>
           {/* eliminado botón duplicado */}
@@ -1335,17 +1461,32 @@ const ExcelComponent: React.FC = () => {
           {/* CONTROLES ADICIONALES: Undo/Redo, Find/Replace, Freeze, Sort, Conditional Formatting */}
           <div className="flex items-center gap-3 mb-3">
             <div className="flex items-center gap-2">
+              <TooltipCooldown content="Copia el rango seleccionado (Ctrl+C)" cooldown={1500}>
+                <button onClick={() => copySelectionToClipboard()} title="Copy (Ctrl+C)" className="w-9 h-8 bg-gray-200 dark:bg-gray-600 rounded text-sm flex items-center justify-center">
+                  <FaCopy className="text-[14px] text-gray-800 dark:text-gray-100" />
+                </button>
+              </TooltipCooldown>
+              <TooltipCooldown content="Pega en la celda activa (Ctrl+V)" cooldown={1500}>
+                <button onClick={() => pasteClipboardAtSelection()} title="Paste (Ctrl+V)" className="w-9 h-8 bg-gray-200 dark:bg-gray-600 rounded text-sm flex items-center justify-center">
+                  <FaPaste className="text-[14px] text-gray-800 dark:text-gray-100" />
+                </button>
+              </TooltipCooldown>
+              <TooltipCooldown content="Pega transpuesto (Ctrl+Shift+V)" cooldown={1500}>
+                <button onClick={() => pasteTransposedAtSelection()} title="Paste Transpose (Ctrl+Shift+V)" className="w-9 h-8 bg-gray-200 dark:bg-gray-600 rounded text-sm flex items-center justify-center">
+                  <FaExchangeAlt className="text-[14px] text-gray-800 dark:text-gray-100" />
+                </button>
+              </TooltipCooldown>
               <TooltipCooldown content="Deshace la última acción (Ctrl+Z)" cooldown={1500}>
-                <button onClick={() => { undo(); }} disabled={!history.length} className={"px-2 py-1 rounded undo-btn" + (darkMode ? " dark" : "")}>Undo</button>
+                <button onClick={() => { undo(); }} disabled={!history.length} className={"px-2 py-1 rounded text-sm " + (darkMode ? "bg-amber-400 text-gray-900 border border-amber-400 hover:bg-amber-500" : "bg-amber-300 text-gray-800 border border-amber-300 hover:bg-amber-400")}>Undo</button>
               </TooltipCooldown>
               <TooltipCooldown content="Rehace la última acción deshecha (Ctrl+Y)" cooldown={1500}>
-                <button onClick={() => { redo(); }} disabled={!future.length} className={"px-2 py-1 rounded redo-btn" + (darkMode ? " dark" : "")}>Redo</button>
+                <button onClick={() => { redo(); }} disabled={!future.length} className={"px-2 py-1 rounded text-sm " + (darkMode ? "bg-amber-400 text-gray-900 border border-amber-400 hover:bg-amber-500" : "bg-amber-300 text-gray-800 border border-amber-300 hover:bg-amber-400")}>Redo</button>
               </TooltipCooldown>
             </div>
 
-            <div className="flex items-center gap-2 p-2 border rounded bg-white">
-              <input placeholder="Buscar" value={findText} onChange={e=>setFindText(e.target.value)} className="px-2 py-1 border rounded text-sm" />
-              <input placeholder="Reemplazar" value={replaceText} onChange={e=>setReplaceText(e.target.value)} className="px-2 py-1 border rounded text-sm" />
+            <div className="flex items-center gap-2 p-2 border rounded bg-white dark:bg-gray-800">
+                <input placeholder="Buscar" value={findText} onChange={e=>setFindText(e.target.value)} className="px-2 py-1 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
+                <input placeholder="Reemplazar" value={replaceText} onChange={e=>setReplaceText(e.target.value)} className="px-2 py-1 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
               <TooltipCooldown content="Busca el texto en la hoja" cooldown={1500}>
                 <button onClick={() => { findMatches(); }} className="px-2 py-1 bg-blue-500 text-white rounded text-sm">Find</button>
               </TooltipCooldown>
@@ -1387,14 +1528,13 @@ const ExcelComponent: React.FC = () => {
         </div>
 
         {/* Barra de fórmulas similar a Excel */}
-        <div className={"mb-3 border rounded p-2 shadow-sm flex items-center gap-3 formula-bar-container" + (darkMode ? " dark" : "") } style={{ background: darkMode ? '#23272f' : '#fff' }}>
-          <div className="text-sm w-16 text-center font-medium" style={{ color: darkMode ? '#ffe066' : '#666' }}>fx</div>
+  <div className="mb-3 border rounded p-2 shadow-sm flex items-center gap-3 bg-white dark:bg-gray-800">
+          <div className="text-sm w-16 text-center font-medium text-gray-600 dark:text-amber-300">fx</div>
           <textarea
             value={formulaText}
             onChange={e => setFormulaText(e.target.value)}
-            className={"flex-1 p-2 border rounded resize-none h-10 text-sm formula-bar" + (darkMode ? " dark" : "")}
+            className="flex-1 p-2 border rounded resize-none h-10 text-sm bg-white dark:bg-gray-800 dark:text-gray-100"
             placeholder="Barra de fórmulas"
-            style={{ background: darkMode ? '#23272f' : '#fff', color: darkMode ? '#ffe066' : '#222', border: darkMode ? '1px solid #ffe066' : '1px solid #ccc' }}
           />
           <div className="flex items-center gap-2">
             <TooltipCooldown content="Aplica la fórmula escrita a la selección (V)" cooldown={1500}>
@@ -1420,13 +1560,13 @@ const ExcelComponent: React.FC = () => {
           </div>
         </div>
 
-  <div className={"overflow-auto border rounded shadow-sm excel-table-container" + (darkMode ? " dark" : "") } style={{ background: darkMode ? '#23272f' : '#fff' }}>
+  <div className="overflow-auto border rounded shadow-sm bg-white dark:bg-gray-800">
           <table ref={tableRef} className="min-w-[1200px] w-full table-fixed" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-            <thead className="sticky top-0 bg-gray-100">
+            <thead className="sticky top-0 bg-gray-100 dark:bg-gray-700">
               <tr>
                 <th className="bg-gray-100 text-gray-700 border-r border-gray-200 w-10">&nbsp;</th>
                 {Array.from({ length: data[0].length }).map((_, colIdx) => (
-                  <th key={colIdx} data-header-col={colIdx} className="bg-gray-100 text-gray-700 text-center font-medium border-b border-gray-200 relative" style={{ width: colWidths[colIdx], height: 36 }}
+                  <th key={colIdx} data-header-col={colIdx} className="bg-gray-100 text-gray-700 text-center font-medium border-b border-gray-200 relative dark:bg-gray-700 dark:text-gray-200" style={{ width: colWidths[colIdx], height: 36 }}
                     onMouseDown={e => {
                       // iniciar drag de selección por columna (sin tocar filas)
                       e.preventDefault();
@@ -1500,7 +1640,7 @@ const ExcelComponent: React.FC = () => {
             <tbody>
               {data.map((row, rowIdx) => (
                 <tr key={rowIdx} className="align-top">
-                  <th className="bg-gray-50 text-gray-600 border-r border-gray-100 w-10 text-center font-medium" style={{ height: 36 }}>{rowIdx + 1}</th>
+                  <th className="bg-gray-50 text-gray-600 border-r border-gray-100 w-10 text-center font-medium dark:bg-gray-700 dark:text-gray-200" style={{ height: 36 }}>{rowIdx + 1}</th>
                   {row.map((cell, colIdx) => {
                     // comprobar si esta celda está cubierta por un merge existente (y si no es la cabecera del merge)
                     const covering = merges.find(m => rowIdx >= m.r && rowIdx < m.r + m.rows && colIdx >= m.c && colIdx < m.c + m.cols);
@@ -1570,7 +1710,7 @@ const ExcelComponent: React.FC = () => {
     {/* Modales y Toasts */}
     {showSortModal && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div className="bg-white p-4 rounded shadow-lg w-80">
+  <div className="bg-white p-4 rounded shadow-lg w-80 dark:bg-gray-800 dark:text-gray-100">
           <h3 className="font-bold mb-2">Sort Range</h3>
           <div className="mb-2">
             <label className="block text-xs">Columna (ej: A)</label>
@@ -1593,7 +1733,7 @@ const ExcelComponent: React.FC = () => {
 
     {showCFModal && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div className="bg-white p-4 rounded shadow-lg w-80">
+  <div className="bg-white p-4 rounded shadow-lg w-80 dark:bg-gray-800 dark:text-gray-100">
           <h3 className="font-bold mb-2">Add Conditional Format</h3>
           <div className="mb-2">
             <label className="block text-xs">Tipo</label>
@@ -1617,7 +1757,7 @@ const ExcelComponent: React.FC = () => {
           </div>
           <div className="mb-3">
             <label className="block text-xs">Color de fondo</label>
-            <input value={cfColorInput} onChange={e=>setCfColorInput(e.target.value)} className="w-full px-2 py-1 border rounded" />
+            <input type="color" value={cfColorInput} onChange={e=>setCfColorInput(e.target.value)} className="w-full h-8 p-1 border rounded" />
           </div>
           <div className="flex justify-end gap-2">
             <button onClick={()=>setShowCFModal(false)} className="px-3 py-1 border rounded">Cancelar</button>
