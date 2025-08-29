@@ -1817,10 +1817,17 @@ const ExcelComponent: React.FC = () => {
           </div>
           <div className="mb-3">
             <label className="block text-xs">Dirección</label>
-            <select value={sortDirection} onChange={e=>setSortDirection(e.target.value as any)} className="w-full px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
-              <option value="asc">Ascendente</option>
-              <option value="desc">Descendente</option>
-            </select>
+            <div className="relative group">
+              <select value={sortDirection} onChange={e=>setSortDirection(e.target.value as any)} className="w-full pr-8 px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+                <option value="asc">Ascendente</option>
+                <option value="desc">Descendente</option>
+              </select>
+              <span className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 transition-transform duration-200 group-focus-within:rotate-180">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </span>
+            </div>
           </div>
           <div className="flex justify-end gap-2">
             <button onClick={()=>setShowSortModal(false)} className="px-3 py-1 border rounded">Cancelar</button>
@@ -1836,12 +1843,19 @@ const ExcelComponent: React.FC = () => {
           <h3 className="font-bold mb-2">Add Conditional Format</h3>
           <div className="mb-2">
             <label className="block text-xs">Tipo</label>
-            <select value={cfTypeInput} onChange={e=>setCfTypeInput(e.target.value as any)} className="w-full px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
-              <option value="gt">Greater than (gt)</option>
-              <option value="lt">Less than (lt)</option>
-              <option value="eq">Equals (eq)</option>
-              <option value="contains">Contains</option>
-            </select>
+            <div className="relative group">
+              <select value={cfTypeInput} onChange={e=>setCfTypeInput(e.target.value as any)} className="w-full pr-8 px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+                <option value="gt">Greater than (gt)</option>
+                <option value="lt">Less than (lt)</option>
+                <option value="eq">Equals (eq)</option>
+                <option value="contains">Contains</option>
+              </select>
+              <span className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 transition-transform duration-200 group-focus-within:rotate-180">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </span>
+            </div>
           </div>
           <div className="mb-2">
             <label className="block text-xs">Valor</label>
@@ -1849,10 +1863,17 @@ const ExcelComponent: React.FC = () => {
           </div>
           <div className="mb-2">
             <label className="block text-xs">Scope</label>
-            <select value={cfScopeInput} onChange={e=>setCfScopeInput(e.target.value as any)} className="w-full px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
-              <option value="selection">Selección actual</option>
-              <option value="sheet">Toda la hoja</option>
-            </select>
+            <div className="relative group">
+              <select value={cfScopeInput} onChange={e=>setCfScopeInput(e.target.value as any)} className="w-full pr-8 px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+                <option value="selection">Selección actual</option>
+                <option value="sheet">Toda la hoja</option>
+              </select>
+              <span className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 transition-transform duration-200 group-focus-within:rotate-180">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </span>
+            </div>
           </div>
           <div className="mb-3">
             <label className="block text-xs">Color de fondo</label>
