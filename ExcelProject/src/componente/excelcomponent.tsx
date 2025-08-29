@@ -919,19 +919,36 @@ const ExcelComponent: React.FC = () => {
     if (selectionStart && selectionEnd) {
       const targetRow = Math.min(selectionStart.row, selectionEnd.row);
       const targetCol = Math.min(selectionStart.col, selectionEnd.col);
-      // escribir resultado en la celda adyacente a la derecha como 'Resultado = <valor>'
-      const resultCol = targetCol + 1;
-      if (resultCol >= data[0].length) {
-        // ampliar tabla con una columna adicional
-        setData(prev => prev.map(r => [...r, '']));
-        setColWidths(prev => [...prev, 96]);
-      }
+      // buscar la siguiente celda vacía a la derecha de targetCol
+      const startCol = targetCol + 1;
+      let placedCol = -1;
       setData(prev => {
         const next = prev.map(r => [...r]);
+        let resultCol = startCol;
+        // buscar dentro de las columnas existentes
+        while (resultCol < next[0].length && next[targetRow] && String(next[targetRow][resultCol] ?? '').trim() !== '') {
+          resultCol++;
+        }
+        // si necesitamos ampliar columnas
+        if (resultCol >= next[0].length) {
+          const need = resultCol - next[0].length + 1;
+          for (let i = 0; i < need; i++) {
+            for (let rr = 0; rr < next.length; rr++) next[rr].push('');
+          }
+          // ajustar colWidths fuera del setData
+        }
         next[targetRow][resultCol] = `Resultado = ${res.value}`;
+        placedCol = resultCol;
         return next;
       });
-      setSelected({ row: targetRow, col: resultCol });
+      // si se añadió/extendieron columnas, ajustar colWidths hasta el tamaño necesario
+      setColWidths(prev => {
+        const cur = prev.slice();
+        const needed = Math.max(0, (data[0]?.length ?? 0) - cur.length);
+        if (needed > 0) return [...cur, ...Array(needed).fill(96)];
+        return cur;
+      });
+      if (placedCol >= 0) setSelected({ row: targetRow, col: placedCol });
       setSelectionStart(null);
       setSelectionEnd(null);
       setFormulaText(String(res.value));
@@ -943,18 +960,31 @@ const ExcelComponent: React.FC = () => {
     // fallback: aplicar en la celda seleccionada
     const targetRow = selected?.row ?? 0;
     const targetCol = selected?.col ?? 0;
-    // escribir resultado en la celda adyacente a la derecha si es posible
-    const resultCol = targetCol + 1;
-    if (resultCol >= data[0].length) {
-      setData(prev => prev.map(r => [...r, '']));
-      setColWidths(prev => [...prev, 96]);
-    }
+    // escribir resultado en la siguiente celda vacía a la derecha
+    const startCol = targetCol + 1;
+    let placedCol = -1;
     setData(prev => {
       const next = prev.map(r => [...r]);
+      let resultCol = startCol;
+      while (resultCol < next[0].length && next[targetRow] && String(next[targetRow][resultCol] ?? '').trim() !== '') resultCol++;
+      if (resultCol >= next[0].length) {
+        const need = resultCol - next[0].length + 1;
+        for (let i = 0; i < need; i++) {
+          for (let rr = 0; rr < next.length; rr++) next[rr].push('');
+        }
+      }
       next[targetRow][resultCol] = `Resultado = ${res.value}`;
+      placedCol = resultCol;
       return next;
     });
-    setSelected({ row: targetRow, col: resultCol });
+    // ajustar colWidths si se añadieron columnas
+    setColWidths(prev => {
+      const cur = prev.slice();
+      const needed = Math.max(0, (data[0]?.length ?? 0) - cur.length);
+      if (needed > 0) return [...cur, ...Array(needed).fill(96)];
+      return cur;
+    });
+    if (placedCol >= 0) setSelected({ row: targetRow, col: placedCol });
     setFormulaText(String(res.value));
   };
 
