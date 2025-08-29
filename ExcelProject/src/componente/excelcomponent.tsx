@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import TooltipCooldown from './TooltipCooldown';
 import { FaTrash } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 
@@ -1122,8 +1123,12 @@ const ExcelComponent: React.FC = () => {
       <div className="max-w-full mx-auto">
         <div className="flex items-center justify-between mb-3 gap-3">
           <div className="flex items-center gap-2">
-            <button onClick={addRow} className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition text-sm">+ Fila</button>
-            <button onClick={deleteRow} title="Eliminar fila" className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition text-sm flex items-center"><FaTrash className="mr-1" />Fila</button>
+            <TooltipCooldown content="Agrega una nueva fila al final de la tabla" cooldown={1500}>
+              <button onClick={addRow} className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition text-sm">+ Fila</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Elimina la fila seleccionada" cooldown={1500}>
+              <button onClick={deleteRow} className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition text-sm flex items-center"><FaTrash className="mr-1" />Fila</button>
+            </TooltipCooldown>
             <select value={selectedRow} onChange={e => setSelectedRow(Number(e.target.value))} className="px-2 py-1 rounded border text-sm">
               {data.map((_, idx) => (
                 <option key={idx} value={idx}>{`Fila ${idx + 1}`}</option>
@@ -1131,8 +1136,12 @@ const ExcelComponent: React.FC = () => {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={addCol} className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition text-sm">+ Col</button>
-            <button onClick={deleteCol} title="Eliminar columna" className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition text-sm flex items-center"><FaTrash className="mr-1" />Col</button>
+            <TooltipCooldown content="Agrega una nueva columna al final de la tabla" cooldown={1500}>
+              <button onClick={addCol} className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition text-sm">+ Col</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Elimina la columna seleccionada" cooldown={1500}>
+              <button onClick={deleteCol} className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition text-sm flex items-center"><FaTrash className="mr-1" />Col</button>
+            </TooltipCooldown>
             <select value={selectedCol} onChange={e => setSelectedCol(Number(e.target.value))} className="px-2 py-1 rounded border text-sm">
               {data[0].map((_, idx) => (
                 <option key={idx} value={idx}>{getColName(idx)}</option>
@@ -1140,32 +1149,47 @@ const ExcelComponent: React.FC = () => {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => fileInputRef.current?.click()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-3 py-1 rounded text-sm">Importar Excel</button>
-            <button onClick={exportToExcel} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-3 py-1 rounded text-sm">Exportar Excel</button>
+            <TooltipCooldown content="Importa datos desde un archivo Excel (.xlsx, .xls, .csv)" cooldown={1500}>
+              <button onClick={() => fileInputRef.current?.click()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-3 py-1 rounded text-sm">Importar Excel</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Exporta la tabla actual a un archivo Excel (.xlsx)" cooldown={1500}>
+              <button onClick={exportToExcel} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-3 py-1 rounded text-sm">Exportar Excel</button>
+            </TooltipCooldown>
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={onFileInputChange} style={{ display: 'none' }} />
-            <button
-              onClick={() => clearSelectedOrAll()}
-              title="Limpiar celdas seleccionadas o toda la hoja"
-              className="bg-gray-700 hover:bg-gray-800 text-white font-semibold px-3 py-1 rounded text-sm"
-            >
-              Clean
-            </button>
+            <TooltipCooldown content="Limpia las celdas seleccionadas o toda la hoja si no hay selección" cooldown={1500}>
+              <button
+                onClick={() => clearSelectedOrAll()}
+                className="bg-gray-700 hover:bg-gray-800 text-white font-semibold px-3 py-1 rounded text-sm"
+              >
+                Clean
+              </button>
+            </TooltipCooldown>
           </div>
         </div>
 
           {/* CONTROLES ADICIONALES: Undo/Redo, Find/Replace, Freeze, Sort, Conditional Formatting */}
           <div className="flex items-center gap-3 mb-3">
             <div className="flex items-center gap-2">
-              <button onClick={() => { undo(); }} disabled={!history.length} className="px-2 py-1 bg-gray-200 rounded">Undo</button>
-              <button onClick={() => { redo(); }} disabled={!future.length} className="px-2 py-1 bg-gray-200 rounded">Redo</button>
+              <TooltipCooldown content="Deshace la última acción (Ctrl+Z)" cooldown={1500}>
+                <button onClick={() => { undo(); }} disabled={!history.length} className="px-2 py-1 bg-gray-200 rounded">Undo</button>
+              </TooltipCooldown>
+              <TooltipCooldown content="Rehace la última acción deshecha (Ctrl+Y)" cooldown={1500}>
+                <button onClick={() => { redo(); }} disabled={!future.length} className="px-2 py-1 bg-gray-200 rounded">Redo</button>
+              </TooltipCooldown>
             </div>
 
             <div className="flex items-center gap-2 p-2 border rounded bg-white">
               <input placeholder="Buscar" value={findText} onChange={e=>setFindText(e.target.value)} className="px-2 py-1 border rounded text-sm" />
               <input placeholder="Reemplazar" value={replaceText} onChange={e=>setReplaceText(e.target.value)} className="px-2 py-1 border rounded text-sm" />
-              <button onClick={() => { findMatches(); }} className="px-2 py-1 bg-blue-500 text-white rounded text-sm">Find</button>
-              <button onClick={() => replaceCurrent()} className="px-2 py-1 bg-yellow-400 text-black rounded text-sm">Replace</button>
-              <button onClick={() => replaceAll()} className="px-2 py-1 bg-red-400 text-white rounded text-sm">Replace All</button>
+              <TooltipCooldown content="Busca el texto en la hoja" cooldown={1500}>
+                <button onClick={() => { findMatches(); }} className="px-2 py-1 bg-blue-500 text-white rounded text-sm">Find</button>
+              </TooltipCooldown>
+              <TooltipCooldown content="Reemplaza la coincidencia actual por el texto indicado" cooldown={1500}>
+                <button onClick={() => replaceCurrent()} className="px-2 py-1 bg-yellow-400 text-black rounded text-sm">Replace</button>
+              </TooltipCooldown>
+              <TooltipCooldown content="Reemplaza todas las coincidencias por el texto indicado" cooldown={1500}>
+                <button onClick={() => replaceAll()} className="px-2 py-1 bg-red-400 text-white rounded text-sm">Replace All</button>
+              </TooltipCooldown>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1176,17 +1200,25 @@ const ExcelComponent: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={() => sortSelectionByColumn()} className="px-2 py-1 bg-indigo-500 text-white rounded text-sm">Sort Range</button>
+              <TooltipCooldown content="Ordena el rango seleccionado por la columna actual" cooldown={1500}>
+                <button onClick={() => sortSelectionByColumn()} className="px-2 py-1 bg-indigo-500 text-white rounded text-sm">Sort Range</button>
+              </TooltipCooldown>
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={() => addConditionalFormatViaPrompt()} className="px-2 py-1 bg-pink-500 text-white rounded text-sm">Add Conditional Format</button>
+              <TooltipCooldown content="Agrega formato condicional al rango seleccionado" cooldown={1500}>
+                <button onClick={() => addConditionalFormatViaPrompt()} className="px-2 py-1 bg-pink-500 text-white rounded text-sm">Add Conditional Format</button>
+              </TooltipCooldown>
             </div>
           </div>
 
         <div className="flex gap-2 mb-4">
-          <button onClick={combineCells} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">Combinar celdas</button>
-          <button onClick={separateCells} className="bg-pink-600 hover:bg-pink-700 text-white px-3 py-1 rounded text-sm">Separar celdas</button>
+          <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
+            <button onClick={combineCells} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">Combinar celdas</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Separa las celdas combinadas seleccionadas" cooldown={1500}>
+            <button onClick={separateCells} className="bg-pink-600 hover:bg-pink-700 text-white px-3 py-1 rounded text-sm">Separar celdas</button>
+          </TooltipCooldown>
         </div>
 
         {/* Barra de fórmulas similar a Excel */}
@@ -1199,16 +1231,26 @@ const ExcelComponent: React.FC = () => {
             placeholder="Barra de fórmulas"
           />
           <div className="flex items-center gap-2">
-            <button onClick={applyFormulaToSelection} title="Aplicar fórmula (V)" className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded font-semibold">V</button>
-            <button onClick={clearFormulaAndSelection} title="Limpiar (X)" className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded font-semibold">X</button>
+            <TooltipCooldown content="Aplica la fórmula escrita a la selección (V)" cooldown={1500}>
+              <button onClick={applyFormulaToSelection} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded font-semibold">V</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Limpia la fórmula y la selección (X)" cooldown={1500}>
+              <button onClick={clearFormulaAndSelection} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded font-semibold">X</button>
+            </TooltipCooldown>
           </div>
           <div className="ml-4 text-sm text-gray-700">
             {computedSum != null ? <span className="font-semibold">Preview: {computedSum.toLocaleString()}</span> : <span className="text-gray-400">Preview: —</span>}
           </div>
           <div className="ml-4 flex items-center gap-2">
-            <button onClick={() => applyQuickFunc('SUM')} className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-sm">SUM</button>
-            <button onClick={() => applyQuickFunc('AVERAGE')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-sm">AVERAGE</button>
-            <button onClick={() => applyQuickFunc('COUNT')} className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded text-sm">COUNT</button>
+            <TooltipCooldown content="Suma los valores de la selección" cooldown={1500}>
+              <button onClick={() => applyQuickFunc('SUM')} className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-sm">SUM</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Calcula el promedio de la selección" cooldown={1500}>
+              <button onClick={() => applyQuickFunc('AVERAGE')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-sm">AVERAGE</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Cuenta las celdas con valor en la selección" cooldown={1500}>
+              <button onClick={() => applyQuickFunc('COUNT')} className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded text-sm">COUNT</button>
+            </TooltipCooldown>
           </div>
         </div>
 
