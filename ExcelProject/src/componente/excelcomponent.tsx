@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import TooltipCooldown from './Auxiliares/TooltipCooldown';
+import Modal from './Auxiliares/Modal';
 import { FaTrash, FaCopy, FaPaste, FaExchangeAlt } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import Cell from './Auxiliares/Cell';
@@ -83,6 +84,8 @@ const ExcelComponent: React.FC = () => {
   }, []);
   // Merges: regiones combinadas
   const [merges, setMerges] = useState<Array<{ r: number; c: number; rows: number; cols: number }>>([]);
+  const [showCombineConfirm, setShowCombineConfirm] = useState(false);
+  const [pendingCombineBox, setPendingCombineBox] = useState<{ r1: number; r2: number; c1: number; c2: number } | null>(null);
 
   // Helper: devuelve el merge que cubre (row,col) si existe
   const getCoveringMerge = useCallback((row: number, col: number) => {
@@ -729,7 +732,9 @@ const ExcelComponent: React.FC = () => {
         }
       }
       if (present.size !== expected) {
-        showToast('Selección no contigua: combina solo rangos rectangulares (usa Shift para seleccionar).');
+        // propose to combine the bounding box but ask confirmation
+        setPendingCombineBox({ r1, r2, c1, c2 });
+        setShowCombineConfirm(true);
         return;
       }
     } else if (selectionStart && selectionEnd) {
@@ -795,6 +800,35 @@ const ExcelComponent: React.FC = () => {
   setSelectionEnd(null);
   setExtraSelections([]);
   showToast('Celdas combinadas');
+  };
+
+  const performCombineRegion = (r1: number, r2: number, c1: number, c2: number) => {
+    // push history for undo
+    pushHistory();
+    const rows = r2 - r1 + 1;
+    const cols = c2 - c1 + 1;
+    setData(prev => {
+      const next = prev.map(r => [...r]);
+      const parts: string[] = [];
+      for (let rr = r1; rr <= r2; rr++) {
+        for (let cc = c1; cc <= c2; cc++) {
+          const v = String(next[rr] && next[rr][cc] != null ? next[rr][cc] : '');
+          if (v !== '') parts.push(v);
+          if (!(rr === r1 && cc === c1)) next[rr][cc] = '';
+        }
+      }
+      next[r1][c1] = parts.join(' ');
+      return next;
+    });
+    setMerges(prev => {
+      const filtered = prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2));
+      return [...filtered, { r: r1, c: c1, rows, cols }];
+    });
+    setSelected({ row: r1, col: c1 });
+    setSelectionStart(null);
+    setSelectionEnd(null);
+    setExtraSelections([]);
+    showToast('Celdas combinadas');
   };
 
   const separateCells = () => {
@@ -1678,6 +1712,16 @@ const ExcelComponent: React.FC = () => {
           </div>
         </div>
       </div>
+    )}
+
+    {showCombineConfirm && pendingCombineBox && (
+      <Modal title="Confirmar combinación" onClose={() => { setShowCombineConfirm(false); setPendingCombineBox(null); }}>
+        <div className="mb-3 text-sm">La selección con Ctrl+click no es contigua. Se propone combinar el rectángulo {`(${pendingCombineBox.r1 + 1}, ${pendingCombineBox.c1 + 1}) - (${pendingCombineBox.r2 + 1}, ${pendingCombineBox.c2 + 1})`}. ¿Continuar?</div>
+        <div className="flex justify-end gap-2">
+          <button onClick={() => { setShowCombineConfirm(false); setPendingCombineBox(null); }} className={`${BTN} border`}>Cancelar</button>
+          <button onClick={() => { if (pendingCombineBox) performCombineRegion(pendingCombineBox.r1, pendingCombineBox.r2, pendingCombineBox.c1, pendingCombineBox.c2); setShowCombineConfirm(false); setPendingCombineBox(null); }} className={`${BTN} bg-purple-600 text-white`}>Confirmar</button>
+        </div>
+      </Modal>
     )}
 
     {showCFModal && (
