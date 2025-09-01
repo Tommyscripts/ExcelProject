@@ -26,10 +26,10 @@ const ExcelComponent: React.FC = () => {
     const root = document.documentElement;
     if (darkMode) {
       root.classList.add('dark');
-      try { window.localStorage?.setItem('darkMode', 'true'); } catch (e) {}
+      try { window.localStorage?.setItem('darkMode', 'true'); } catch (e) { }
     } else {
       root.classList.remove('dark');
-      try { window.localStorage?.setItem('darkMode', 'false'); } catch (e) {}
+      try { window.localStorage?.setItem('darkMode', 'false'); } catch (e) { }
     }
   }, [darkMode]);
 
@@ -76,8 +76,8 @@ const ExcelComponent: React.FC = () => {
   const [extraSelections, setExtraSelections] = useState<Array<{ r1: number; c1: number; r2: number; c2: number }>>([]);
 
   React.useEffect(() => {
-  const kd = (e: KeyboardEvent) => { if (e.key === 'Shift') shiftPressed.current = true; if (e.key === 'Control' || e.key === 'Meta') ctrlPressed.current = true; };
-  const ku = (e: KeyboardEvent) => { if (e.key === 'Shift') shiftPressed.current = false; if (e.key === 'Control' || e.key === 'Meta') ctrlPressed.current = false; };
+    const kd = (e: KeyboardEvent) => { if (e.key === 'Shift') shiftPressed.current = true; if (e.key === 'Control' || e.key === 'Meta') ctrlPressed.current = true; };
+    const ku = (e: KeyboardEvent) => { if (e.key === 'Shift') shiftPressed.current = false; if (e.key === 'Control' || e.key === 'Meta') ctrlPressed.current = false; };
     window.addEventListener('keydown', kd);
     window.addEventListener('keyup', ku);
     return () => { window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); };
@@ -226,7 +226,7 @@ const ExcelComponent: React.FC = () => {
   const [freezeRows, setFreezeRows] = useState<number>(0);
   const [freezeCols, setFreezeCols] = useState<number>(0);
 
-  
+
 
   const getColLefts = useCallback(() => {
     const lefts: number[] = [];
@@ -240,12 +240,12 @@ const ExcelComponent: React.FC = () => {
 
   // --- Sort Range ---
   const sortSelectionByColumn = () => {
-  // Sorting is handled via the Sort modal (showSortModal) which calls sortRangeByColumn
-  return;
+    // Sorting is handled via the Sort modal (showSortModal) which calls sortRangeByColumn
+    return;
   };
 
   // --- Conditional Formatting (simple) ---
-  type CFRule = { id: string; type: 'gt'|'lt'|'eq'|'contains'; value: string; bg?: string; color?: string; scope?: { r1:number,c1:number,r2:number,c2:number } | null };
+  type CFRule = { id: string; type: 'gt' | 'lt' | 'eq' | 'contains'; value: string; bg?: string; color?: string; scope?: { r1: number, c1: number, r2: number, c2: number } | null };
   const [conditionalFormats, setConditionalFormats] = useState<CFRule[]>([]);
   // --- Local storage persistence ---
   const STORAGE_KEY = 'meloexcel_v1';
@@ -301,13 +301,13 @@ const ExcelComponent: React.FC = () => {
   // --- Mejoras UX: modales para Sort y Conditional Format + toast ---
   const [showSortModal, setShowSortModal] = useState(false);
   const [sortColInput, setSortColInput] = useState(getColName(selectionStart?.col ?? 0));
-  const [sortDirection, setSortDirection] = useState<'asc'|'desc'>('asc');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const [showCFModal, setShowCFModal] = useState(false);
   const [cfTypeInput, setCfTypeInput] = useState<CFRule['type']>('gt');
   const [cfValueInput, setCfValueInput] = useState('0');
   const [cfColorInput, setCfColorInput] = useState('#fffbcc');
-  const [cfScopeInput, setCfScopeInput] = useState<'selection'|'sheet'>('selection');
+  const [cfScopeInput, setCfScopeInput] = useState<'selection' | 'sheet'>('selection');
 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const showToast = (msg: string, ms = 2500) => {
@@ -317,7 +317,7 @@ const ExcelComponent: React.FC = () => {
 
   // Clipboard for copy/paste ranges
   const [copiedRange, setCopiedRange] = useState<string[][] | null>(null);
-  const [pasteHighlight, setPasteHighlight] = useState<{ r1:number;c1:number;r2:number;c2:number } | null>(null);
+  const [pasteHighlight, setPasteHighlight] = useState<{ r1: number; c1: number; r2: number; c2: number } | null>(null);
   const [pasteFade, setPasteFade] = useState<boolean>(false);
   const serializeRange = (arr: string[][]) => arr.map(r => r.join('\t')).join('\n');
   const parseSerialized = (s: string) => s.split(/\r?\n/).map(row => row.split('\t'));
@@ -390,13 +390,13 @@ const ExcelComponent: React.FC = () => {
       if (newLen <= prev.length) return prev;
       return [...prev, ...Array(newLen - prev.length).fill(96)];
     });
-  // highlight temporal con fade
-  setPasteHighlight({ r1: startRow, c1: startCol, r2: startRow + toPaste.length - 1, c2: startCol + toPaste[0].length - 1 });
-  setPasteFade(false);
-  // trigger fade shortly before clearing
-  window.setTimeout(() => setPasteFade(true), 1100);
-  window.setTimeout(() => { setPasteHighlight(null); setPasteFade(false); }, 1500);
-  showToast('Pegado');
+    // highlight temporal con fade
+    setPasteHighlight({ r1: startRow, c1: startCol, r2: startRow + toPaste.length - 1, c2: startCol + toPaste[0].length - 1 });
+    setPasteFade(false);
+    // trigger fade shortly before clearing
+    window.setTimeout(() => setPasteFade(true), 1100);
+    window.setTimeout(() => { setPasteHighlight(null); setPasteFade(false); }, 1500);
+    showToast('Pegado');
   };
 
   // Paste transposed (rows<->cols)
@@ -438,12 +438,12 @@ const ExcelComponent: React.FC = () => {
       }
       return next;
     });
-  // highlight temporal para transposed con fade
-  setPasteHighlight({ r1: startRow, c1: startCol, r2: startRow + (toPaste[0].length) - 1, c2: startCol + (toPaste.length) - 1 });
-  setPasteFade(false);
-  window.setTimeout(() => setPasteFade(true), 1100);
-  window.setTimeout(() => { setPasteHighlight(null); setPasteFade(false); }, 1500);
-  showToast('Pegado (transpuesto)');
+    // highlight temporal para transposed con fade
+    setPasteHighlight({ r1: startRow, c1: startCol, r2: startRow + (toPaste[0].length) - 1, c2: startCol + (toPaste.length) - 1 });
+    setPasteFade(false);
+    window.setTimeout(() => setPasteFade(true), 1100);
+    window.setTimeout(() => { setPasteHighlight(null); setPasteFade(false); }, 1500);
+    showToast('Pegado (transpuesto)');
   };
 
   // Global keyboard handlers for Ctrl+C / Ctrl+V
@@ -519,9 +519,9 @@ const ExcelComponent: React.FC = () => {
     showToast('Rango ordenado');
   };
 
-  const addConditionalFormat = (type: CFRule['type'], value: string, bg: string, scopeChoice: 'selection'|'sheet' = 'selection') => {
+  const addConditionalFormat = (type: CFRule['type'], value: string, bg: string, scopeChoice: 'selection' | 'sheet' = 'selection') => {
     const id = String(Date.now());
-    let scope = null as null | { r1:number;c1:number;r2:number;c2:number };
+    let scope = null as null | { r1: number; c1: number; r2: number; c2: number };
     if (scopeChoice === 'selection' && selectionStart && selectionEnd) {
       const r1 = Math.min(selectionStart.row, selectionEnd.row);
       const r2 = Math.max(selectionStart.row, selectionEnd.row);
@@ -540,8 +540,8 @@ const ExcelComponent: React.FC = () => {
   };
 
   const addCol = () => {
-  setData(prev => prev.map(row => [...row, '']));
-  setColWidths(prev => [...prev, 96]);
+    setData(prev => prev.map(row => [...row, '']));
+    setColWidths(prev => [...prev, 96]);
   };
 
   // Selección de fila y columna
@@ -566,8 +566,8 @@ const ExcelComponent: React.FC = () => {
 
   const deleteCol = () => {
     if (data[0].length > 1 && selectedCol >= 0 && selectedCol < data[0].length) {
-  setData(prev => prev.map(row => row.filter((_, idx) => idx !== selectedCol)));
-  setColWidths(prev => prev.filter((_, idx) => idx !== selectedCol));
+      setData(prev => prev.map(row => row.filter((_, idx) => idx !== selectedCol)));
+      setColWidths(prev => prev.filter((_, idx) => idx !== selectedCol));
       // ajustar merges: eliminar merges que intersecten la columna eliminada, y desplazar merges posteriores
       setMerges(prev => prev
         .map(m => {
@@ -599,15 +599,15 @@ const ExcelComponent: React.FC = () => {
       hadDragSinceMouseDown.current = false;
       return;
     }
-  // Ctrl+click: toggle la celda en extraSelections
-  if (ctrlPressed.current) {
+    // Ctrl+click: toggle la celda en extraSelections
+    if (ctrlPressed.current) {
       const exists = extraSelections.find(s => s.r1 === row && s.r2 === row && s.c1 === col && s.c2 === col);
-  if (exists) setExtraSelections(prev => prev.filter(s => !(s.r1 === row && s.r2 === row && s.c1 === col && s.c2 === col)));
+      if (exists) setExtraSelections(prev => prev.filter(s => !(s.r1 === row && s.r2 === row && s.c1 === col && s.c2 === col)));
       else setExtraSelections(prev => [...prev, { r1: row, c1: col, r2: row, c2: col }]);
       return;
     }
-  // Para click normal, limpiar selecciones aditivas previas
-  setExtraSelections([]);
+    // Para click normal, limpiar selecciones aditivas previas
+    setExtraSelections([]);
     // Si el Shift está presionado, expandir o crear selección usando la celda actualmente seleccionada como origen
     if (shiftPressed.current) {
       // Si hay una celda activa (selected), usarla como anchor y expandir hasta la celda clicada
@@ -638,9 +638,9 @@ const ExcelComponent: React.FC = () => {
     // Iniciar posible selección por mousedown.
     // Si Shift está presionado y hay una celda previamente seleccionada, usarla como ancla.
     // Si no, anclar la selección a la celda clicada para evitar rangos accidentales.
-  // reset drag flag at start of a new mousedown
-  hadDragSinceMouseDown.current = false;
-  isMouseDown.current = true;
+    // reset drag flag at start of a new mousedown
+    hadDragSinceMouseDown.current = false;
+    isMouseDown.current = true;
     // no activamos isDragging hasta que el usuario mueva el mouse
     setIsDragging(false);
     if (shiftPressed.current && selected) {
@@ -669,9 +669,9 @@ const ExcelComponent: React.FC = () => {
 
   const handleCellMouseUp = useCallback(() => {
     // No limpiamos selectionStart aquí para que la selección persista después de soltar.
-  isMouseDown.current = false;
-  // reset drag flag when mouse is released
-  hadDragSinceMouseDown.current = false;
+    isMouseDown.current = false;
+    // reset drag flag when mouse is released
+    hadDragSinceMouseDown.current = false;
     setIsDragging(false);
   }, []);
 
@@ -687,7 +687,7 @@ const ExcelComponent: React.FC = () => {
         isMouseDown.current = false;
       }
       setIsDragging(false);
-  hadDragSinceMouseDown.current = false;
+      hadDragSinceMouseDown.current = false;
     };
     window.addEventListener('mouseup', onUp);
     return () => window.removeEventListener('mouseup', onUp);
@@ -771,11 +771,11 @@ const ExcelComponent: React.FC = () => {
     const rows = r2 - r1 + 1;
     const cols = c2 - c1 + 1;
     if (rows === 1 && cols === 1) return; // nada que combinar
-  // push history for undo
-  pushHistory();
+    // push history for undo
+    pushHistory();
 
-  // Concatenar contenidos en la celda superior-izquierda y vaciar las demás
-  setData(prev => {
+    // Concatenar contenidos en la celda superior-izquierda y vaciar las demás
+    setData(prev => {
       const next = prev.map(r => [...r]);
       const parts: string[] = [];
       for (let rr = r1; rr <= r2; rr++) {
@@ -794,12 +794,12 @@ const ExcelComponent: React.FC = () => {
       const filtered = prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2));
       return [...filtered, { r: r1, c: c1, rows, cols }];
     });
-  // seleccionar la celda combinada y limpiar selecciones previas
-  setSelected({ row: r1, col: c1 });
-  setSelectionStart(null);
-  setSelectionEnd(null);
-  setExtraSelections([]);
-  showToast('Celdas combinadas');
+    // seleccionar la celda combinada y limpiar selecciones previas
+    setSelected({ row: r1, col: c1 });
+    setSelectionStart(null);
+    setSelectionEnd(null);
+    setExtraSelections([]);
+    showToast('Celdas combinadas');
   };
 
   const performCombineRegion = (r1: number, r2: number, c1: number, c2: number) => {
@@ -858,14 +858,14 @@ const ExcelComponent: React.FC = () => {
         return true;
       }));
       setExtraSelections([]);
-  showToast('Celdas separadas');
+      showToast('Celdas separadas');
       return;
     }
     // si no hay selección múltiple, separar el merge que contenga la celda seleccionada
     if (selected) {
       const { row, col } = selected;
-  setMerges(prev => prev.filter(m => !(row >= m.r && row < m.r + m.rows && col >= m.c && col < m.c + m.cols)));
-  showToast('Celdas separadas');
+      setMerges(prev => prev.filter(m => !(row >= m.r && row < m.r + m.rows && col >= m.c && col < m.c + m.cols)));
+      showToast('Celdas separadas');
     }
   };
 
@@ -909,7 +909,7 @@ const ExcelComponent: React.FC = () => {
   React.useEffect(() => {
     // Usar coordenadas relativas a la tabla y `colWidths` para calcular fila/col
     const onMove = (e: MouseEvent) => {
-  if (!isMouseDown.current || !shiftPressed.current) return;
+      if (!isMouseDown.current || !shiftPressed.current) return;
       const table = tableRef.current;
       if (!table) return;
       const rect = table.getBoundingClientRect();
@@ -980,7 +980,7 @@ const ExcelComponent: React.FC = () => {
       if (headerDragging.current) {
         headerDragging.current = false;
         headerDragStart.current = null;
-  hadDragSinceMouseDown.current = false;
+        hadDragSinceMouseDown.current = false;
       }
     };
     window.addEventListener('mousemove', onMoveHeader);
@@ -1083,6 +1083,43 @@ const ExcelComponent: React.FC = () => {
     if (func === 'COUNT') {
       return { value: allVals.length, func };
     }
+    // CONCAT: concatena los valores como texto
+    if (func === 'CONCAT') {
+      // Para CONCAT, obtener los valores como texto
+      let allTexts: string[] = [];
+      for (const ap of argParts) {
+        const range = parseRangeArg(ap);
+        if (!range) continue;
+        for (let r = range.r1; r <= range.r2; r++) {
+          for (let c = range.c1; c <= range.c2; c++) {
+            const val = data[r]?.[c];
+            if (val !== undefined && val !== null) allTexts.push(String(val));
+          }
+        }
+      }
+      return { value: allTexts.join(''), func };
+    }
+
+    // DATE: construye una fecha a partir de argumentos (año, mes, día)
+    if (func === 'DATE') {
+      // Espera argumentos: año, mes, día
+      if (argParts.length === 3) {
+        const year = Number(argParts[0]);
+        const month = Number(argParts[1]) - 1; // JS: 0-based
+        const day = Number(argParts[2]);
+        const d = new Date(year, month, day);
+        if (!isNaN(d.getTime())) {
+          return { value: d.toISOString().slice(0, 10), func };
+        }
+      }
+      return { value: '', func };
+    }
+
+    // TODAY: devuelve la fecha actual
+    if (func === 'TODAY') {
+      const d = new Date();
+      return { value: d.toISOString().slice(0, 10), func };
+    }
     return null;
   };
 
@@ -1092,10 +1129,10 @@ const ExcelComponent: React.FC = () => {
     if (res && typeof res.value === 'number') {
       setComputedSum(res.value);
       // si no hay formulaText, mostrar el número en la barra (comodidad)
-  // Nota: no sobreescribimos `formulaText` automáticamente con el preview, evita escribir valores inesperados al pulsar V
+      // Nota: no sobreescribimos `formulaText` automáticamente con el preview, evita escribir valores inesperados al pulsar V
     } else {
       setComputedSum(null);
-  // no tocar formulaText
+      // no tocar formulaText
     }
   }, [selectionStart, selectionEnd, data, formulaText]);
 
@@ -1143,7 +1180,7 @@ const ExcelComponent: React.FC = () => {
       return;
     }
 
-  // no aplicamos a extraSelections automáticamente para evitar efectos inesperados
+    // no aplicamos a extraSelections automáticamente para evitar efectos inesperados
 
     // fallback: aplicar en la celda seleccionada
     const targetRow = selected?.row ?? 0;
@@ -1181,12 +1218,12 @@ const ExcelComponent: React.FC = () => {
     setComputedSum(null);
     setSelectionStart(null);
     setSelectionEnd(null);
-  setExtraSelections([]);
-  setSelected(null);
+    setExtraSelections([]);
+    setSelected(null);
   };
 
   // Quick action: build formula from current selection and apply (SUM/AVERAGE/COUNT)
-  const applyQuickFunc = (fn: 'SUM' | 'AVERAGE' | 'COUNT') => {
+  const applyQuickFunc = (fn: 'SUM' | 'AVERAGE' | 'COUNT' | 'CONCAT') => {
     if (!selectionStart || !selectionEnd) return;
     const r1 = Math.min(selectionStart.row, selectionEnd.row);
     const r2 = Math.max(selectionStart.row, selectionEnd.row);
@@ -1209,7 +1246,6 @@ const ExcelComponent: React.FC = () => {
     // aplicar inmediatamente
     const res = computeFormulaResult(formula);
     if (res) {
-      // poner en celda superior-izquierda
       setData(prev => {
         const next = prev.map(r => [...r]);
         next[r1][c1] = String(res.value);
@@ -1218,7 +1254,7 @@ const ExcelComponent: React.FC = () => {
       setSelected({ row: r1, col: c1 });
       setSelectionStart(null);
       setSelectionEnd(null);
-      setComputedSum(res.value);
+      setComputedSum(res.value as number);
     }
   };
 
@@ -1252,13 +1288,13 @@ const ExcelComponent: React.FC = () => {
           }
         }
         // limpiar selección visual
-  // eliminar merges que intersecten la región limpiada
-  setMerges(prev => prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2)));
-  setSelectionStart(null);
-  setSelectionEnd(null);
-  setExtraSelections([]);
-  setSelected(null);
-  showToast('Rango limpiado y merges separados si existían');
+        // eliminar merges que intersecten la región limpiada
+        setMerges(prev => prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2)));
+        setSelectionStart(null);
+        setSelectionEnd(null);
+        setExtraSelections([]);
+        setSelected(null);
+        showToast('Rango limpiado y merges separados si existían');
         return next;
       }
       // selecciones adicionales
@@ -1290,10 +1326,10 @@ const ExcelComponent: React.FC = () => {
         const { row, col } = selected;
         if (next[row] && next[row][col] != null) next[row][col] = '';
         setSelected(null);
-  // eliminar cualquier merge que contenga esta celda
-  setMerges(prev => prev.filter(m => !(row >= m.r && row < m.r + m.rows && col >= m.c && col < m.c + m.cols)));
-  showToast('Celda limpiada y merge separado si existía');
-  return next;
+        // eliminar cualquier merge que contenga esta celda
+        setMerges(prev => prev.filter(m => !(row >= m.r && row < m.r + m.rows && col >= m.c && col < m.c + m.cols)));
+        showToast('Celda limpiada y merge separado si existía');
+        return next;
       }
       // sin selección: confirmar y limpiar toda la hoja
       if (!window.confirm('No hay selección. ¿Limpiar toda la hoja?')) return prev;
@@ -1312,17 +1348,17 @@ const ExcelComponent: React.FC = () => {
   };
 
   // aplicar estilos condicionales antes de render
-  const computeCellStyles = (r:number,c:number) => {
+  const computeCellStyles = (r: number, c: number) => {
     let style: React.CSSProperties = {};
     let cls = '';
     // search matches -> use tailwind ring
-    if (searchMatches.find(m=>m.row===r && m.col===c)) {
+    if (searchMatches.find(m => m.row === r && m.col === c)) {
       cls += ' ring-2 ring-orange-400/70';
     }
     // conditional formats
     for (const cf of conditionalFormats) {
       const scope = cf.scope;
-      const inScope = !scope || (r>=cf.scope!.r1 && r<=cf.scope!.r2 && c>=cf.scope!.c1 && c<=cf.scope!.c2);
+      const inScope = !scope || (r >= cf.scope!.r1 && r <= cf.scope!.r2 && c >= cf.scope!.c1 && c <= cf.scope!.c2);
       if (!inScope) continue;
       const cellVal = String(data[r][c] ?? '');
       if (cf.type === 'gt') { if (!Number.isNaN(Number(cellVal)) && Number(cellVal) > Number(cf.value)) { style.background = cf.bg; } }
@@ -1354,9 +1390,9 @@ const ExcelComponent: React.FC = () => {
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
       const json = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 });
-  // leer merges si existen
-  const sheetMerges: any[] = worksheet['!merges'] || [];
-  const importedMerges = sheetMerges.map(m => ({ r: m.s.r, c: m.s.c, rows: m.e.r - m.s.r + 1, cols: m.e.c - m.s.c + 1 }));
+      // leer merges si existen
+      const sheetMerges: any[] = worksheet['!merges'] || [];
+      const importedMerges = sheetMerges.map(m => ({ r: m.s.r, c: m.s.c, rows: m.e.r - m.s.r + 1, cols: m.e.c - m.s.c + 1 }));
       // normalizar filas/columnas
       const maxCols = Math.max(...json.map((r: any) => r.length));
       const normalized = json.map((r: any) => {
@@ -1364,14 +1400,14 @@ const ExcelComponent: React.FC = () => {
         return arr;
       });
       setData(normalized.length ? normalized : createInitialData(INITIAL_ROWS, INITIAL_COLS));
-  setMerges(importedMerges);
+      setMerges(importedMerges);
       // ajustar colWidths
       setColWidths(prev => {
         const needed = normalized[0]?.length || INITIAL_COLS;
         return Array.from({ length: needed }, (_, i) => prev[i] ?? 96);
       });
     };
-  reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(file);
     // limpiar
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -1381,9 +1417,18 @@ const ExcelComponent: React.FC = () => {
 
   return (
     <div className={"min-h-screen p-6 bg-gray-50 dark:bg-gray-900 dark:text-gray-100"}>
-  <div className="max-w-full mx-auto relative">
+      <div className="max-w-full mx-auto relative">
         <div className="flex items-center justify-between mb-3 gap-3">
-    <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+        {/* Botones de combinar y separar celdas debajo de copiar/pegar/transponer */}
+        <div className="flex gap-4 justify-center mb-2 w-full">
+          <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
+            <button onClick={combineCells} className={`${BTN} bg-purple-600 hover:bg-purple-700 text-white`}>Combinar celdas</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Separa las celdas combinadas seleccionadas" cooldown={1500}>
+            <button onClick={separateCells} className={`${BTN} bg-pink-600 hover:bg-pink-700 text-white`}>Separar celdas</button>
+          </TooltipCooldown>
+        </div>
             <TooltipCooldown content="Agrega una nueva fila al final de la tabla" cooldown={1500}>
               <button onClick={addRow} className={`${BTN} bg-blue-600 text-white hover:bg-blue-700 transition`}>+ Fila</button>
             </TooltipCooldown>
@@ -1432,229 +1477,224 @@ const ExcelComponent: React.FC = () => {
             </button>
           </div>
           {/* eliminado botón duplicado */}
-          </div>
         </div>
+      </div>
 
-          {/* CONTROLES ADICIONALES: Undo/Redo, Find/Replace, Freeze, Sort, Conditional Formatting */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex items-center gap-2">
-              <TooltipCooldown content="Copia el rango seleccionado (Ctrl+C)" cooldown={1500}>
-                <button onClick={() => copySelectionToClipboard()} title="Copy (Ctrl+C)" className={`${BTN} w-9 px-0 bg-gray-200 dark:bg-gray-600`}>
-                  <FaCopy className="text-sm text-gray-800 dark:text-gray-100 align-middle" />
-                </button>
-              </TooltipCooldown>
-              <TooltipCooldown content="Pega en la celda activa (Ctrl+V)" cooldown={1500}>
-                <button onClick={() => pasteClipboardAtSelection()} title="Paste (Ctrl+V)" className={`${BTN} w-9 px-0 bg-gray-200 dark:bg-gray-600`}>
-                  <FaPaste className="text-sm text-gray-800 dark:text-gray-100 align-middle" />
-                </button>
-              </TooltipCooldown>
-              <TooltipCooldown content="Pega transpuesto (Ctrl+Shift+V)" cooldown={1500}>
-                <button onClick={() => pasteTransposedAtSelection()} title="Paste Transpose (Ctrl+Shift+V)" className={`${BTN} w-9 px-0 bg-gray-200 dark:bg-gray-600`}>
-                  <FaExchangeAlt className="text-sm text-gray-800 dark:text-gray-100 align-middle" />
-                </button>
-              </TooltipCooldown>
-              <TooltipCooldown content="Deshace la última acción (Ctrl+Z)" cooldown={1500}>
-                <button onClick={() => { undo(); }} disabled={!history.length} className={`${BTN} ${darkMode ? 'bg-amber-400 text-gray-900 border border-amber-400 hover:bg-amber-500' : 'bg-amber-300 text-gray-800 border border-amber-300 hover:bg-amber-400'}`}>Undo</button>
-              </TooltipCooldown>
-              <TooltipCooldown content="Rehace la última acción deshecha (Ctrl+Y)" cooldown={1500}>
-                <button onClick={() => { redo(); }} disabled={!future.length} className={`${BTN} ${darkMode ? 'bg-amber-400 text-gray-900 border border-amber-400 hover:bg-amber-500' : 'bg-amber-300 text-gray-800 border border-amber-300 hover:bg-amber-400'}`}>Redo</button>
-              </TooltipCooldown>
-            </div>
-
-            <div className="flex items-center gap-2 p-2 border rounded bg-white dark:bg-gray-800">
-                <input placeholder="Buscar" value={findText} onChange={e=>setFindText(e.target.value)} className="px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
-                <input placeholder="Reemplazar" value={replaceText} onChange={e=>setReplaceText(e.target.value)} className="px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
-              <TooltipCooldown content="Busca el texto en la hoja" cooldown={1500}>
-                <button onClick={() => { findMatches(); }} className={`${BTN} bg-blue-500 text-white`}>Find</button>
-              </TooltipCooldown>
-              <TooltipCooldown content="Reemplaza la coincidencia actual por el texto indicado" cooldown={1500}>
-                <button onClick={() => replaceCurrent()} className={`${BTN} bg-yellow-400 text-black`}>Replace</button>
-              </TooltipCooldown>
-              <TooltipCooldown content="Reemplaza todas las coincidencias por el texto indicado" cooldown={1500}>
-                <button onClick={() => replaceAll()} className={`${BTN} bg-red-400 text-white`}>Replace All</button>
-              </TooltipCooldown>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-sm">Freeze R:</label>
-                <input type="number" value={freezeRows} onChange={e=>setFreezeRows(Number(e.target.value)||0)} className="w-16 px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
-                <label className="text-sm">C:</label>
-                <input type="number" value={freezeCols} onChange={e=>setFreezeCols(Number(e.target.value)||0)} className="w-16 px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <TooltipCooldown content="Ordena el rango seleccionado por la columna actual" cooldown={1500}>
-                <button onClick={() => { setShowSortModal(true); setSortColInput(getColName(selectionStart?.col ?? 0)); }} className={`${BTN} bg-indigo-500 text-white`}>Sort Range</button>
-              </TooltipCooldown>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <TooltipCooldown content="Agrega formato condicional al rango seleccionado" cooldown={1500}>
-                <button onClick={() => { setShowCFModal(true); setCfTypeInput('gt'); setCfValueInput('0'); setCfColorInput('#fffbcc'); }} className={`${BTN} bg-pink-500 text-white`}>Add Conditional Format</button>
-              </TooltipCooldown>
-            </div>
-          </div>
-
-        <div className="flex gap-2 mb-4">
-          <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
-            <button onClick={combineCells} className={`${BTN} bg-purple-600 hover:bg-purple-700 text-white`}>Combinar celdas</button>
+      {/* CONTROLES ADICIONALES: Undo/Redo, Find/Replace, Freeze, Sort, Conditional Formatting */}
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-2">
+          <TooltipCooldown content="Copia el rango seleccionado (Ctrl+C)" cooldown={1500}>
+            <button onClick={() => copySelectionToClipboard()} title="Copy (Ctrl+C)" className={`${BTN} w-9 px-0 bg-gray-200 dark:bg-gray-600`}>
+              <FaCopy className="text-sm text-gray-800 dark:text-gray-100 align-middle" />
+            </button>
           </TooltipCooldown>
-          <TooltipCooldown content="Separa las celdas combinadas seleccionadas" cooldown={1500}>
-            <button onClick={separateCells} className={`${BTN} bg-pink-600 hover:bg-pink-700 text-white`}>Separar celdas</button>
+          <TooltipCooldown content="Pega en la celda activa (Ctrl+V)" cooldown={1500}>
+            <button onClick={() => pasteClipboardAtSelection()} title="Paste (Ctrl+V)" className={`${BTN} w-9 px-0 bg-gray-200 dark:bg-gray-600`}>
+              <FaPaste className="text-sm text-gray-800 dark:text-gray-100 align-middle" />
+            </button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Pega transpuesto (Ctrl+Shift+V)" cooldown={1500}>
+            <button onClick={() => pasteTransposedAtSelection()} title="Paste Transpose (Ctrl+Shift+V)" className={`${BTN} w-9 px-0 bg-gray-200 dark:bg-gray-600`}>
+              <FaExchangeAlt className="text-sm text-gray-800 dark:text-gray-100 align-middle" />
+            </button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Deshace la última acción (Ctrl+Z)" cooldown={1500}>
+            <button onClick={() => { undo(); }} disabled={!history.length} className={`${BTN} ${darkMode ? 'bg-amber-400 text-gray-900 border border-amber-400 hover:bg-amber-500' : 'bg-amber-300 text-gray-800 border border-amber-300 hover:bg-amber-400'}`}>Undo</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Rehace la última acción deshecha (Ctrl+Y)" cooldown={1500}>
+            <button onClick={() => { redo(); }} disabled={!future.length} className={`${BTN} ${darkMode ? 'bg-amber-400 text-gray-900 border border-amber-400 hover:bg-amber-500' : 'bg-amber-300 text-gray-800 border border-amber-300 hover:bg-amber-400'}`}>Redo</button>
           </TooltipCooldown>
         </div>
 
-        {/* Barra de fórmulas similar a Excel */}
-  <div className="mb-3 border rounded p-2 shadow-sm flex items-center gap-3 bg-white dark:bg-gray-800">
-          <div className="text-sm w-16 text-center font-medium text-gray-600 dark:text-amber-300">fx</div>
-          <textarea
-            value={formulaText}
-            onChange={e => setFormulaText(e.target.value)}
-            className="flex-1 p-2 border rounded resize-none h-10 text-sm bg-white dark:bg-gray-800 dark:text-gray-100"
-            placeholder="Barra de fórmulas"
-          />
-          <div className="flex items-center gap-2">
-            <TooltipCooldown content="Aplica la fórmula escrita a la selección (V)" cooldown={1500}>
-              <button onClick={applyFormulaToSelection} className={`${BTN} w-9 px-0 bg-green-600 hover:bg-green-700 text-white`}>V</button>
-            </TooltipCooldown>
-            <TooltipCooldown content="Limpia la fórmula y la selección (X)" cooldown={1500}>
-              <button onClick={clearFormulaAndSelection} className={`${BTN} w-9 px-0 bg-red-600 hover:bg-red-700 text-white`}>X</button>
-            </TooltipCooldown>
-          </div>
-          <div className="ml-4 text-sm text-gray-700">
-            {computedSum != null ? <span className="font-semibold">Preview: {computedSum.toLocaleString()}</span> : <span className="text-gray-400">Preview: —</span>}
-          </div>
-          <div className="ml-4 flex items-center gap-2">
-            <TooltipCooldown content="Suma los valores de la selección" cooldown={1500}>
-              <button onClick={() => applyQuickFunc('SUM')} className={`${BTN} bg-blue-600 hover:bg-blue-700 text-white`}>SUM</button>
-            </TooltipCooldown>
-            <TooltipCooldown content="Calcula el promedio de la selección" cooldown={1500}>
-              <button onClick={() => applyQuickFunc('AVERAGE')} className={`${BTN} bg-indigo-600 hover:bg-indigo-700 text-white`}>AVERAGE</button>
-            </TooltipCooldown>
-            <TooltipCooldown content="Cuenta las celdas con valor en la selección" cooldown={1500}>
-              <button onClick={() => applyQuickFunc('COUNT')} className={`${BTN} bg-gray-600 hover:bg-gray-700 text-white`}>COUNT</button>
-            </TooltipCooldown>
-          </div>
+        <div className="flex items-center gap-2 p-2 border rounded bg-white dark:bg-gray-800">
+          <input placeholder="Buscar" value={findText} onChange={e => setFindText(e.target.value)} className="px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
+          <input placeholder="Reemplazar" value={replaceText} onChange={e => setReplaceText(e.target.value)} className="px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
+          <TooltipCooldown content="Busca el texto en la hoja" cooldown={1500}>
+            <button onClick={() => { findMatches(); }} className={`${BTN} bg-blue-500 text-white`}>Find</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Reemplaza la coincidencia actual por el texto indicado" cooldown={1500}>
+            <button onClick={() => replaceCurrent()} className={`${BTN} bg-yellow-400 text-black`}>Replace</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Reemplaza todas las coincidencias por el texto indicado" cooldown={1500}>
+            <button onClick={() => replaceAll()} className={`${BTN} bg-red-400 text-white`}>Replace All</button>
+          </TooltipCooldown>
         </div>
 
-  <div className="overflow-auto border rounded shadow-sm bg-white dark:bg-gray-800">
-          <table ref={tableRef} className="min-w-[1200px] w-full table-fixed" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-            <thead className="sticky top-0 bg-gray-100 dark:bg-gray-700">
-              <tr>
-                <th className="bg-gray-100 text-gray-700 border-r border-gray-200 w-10 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">&nbsp;</th>
-                {Array.from({ length: data[0].length }).map((_, colIdx) => (
-                  <th key={colIdx} data-header-col={colIdx} className="bg-gray-100 text-gray-700 text-center font-medium border-b border-gray-200 relative dark:bg-gray-700 dark:text-gray-200" style={{ width: colWidths[colIdx], height: 36 }}
-                    onMouseDown={e => {
-                      // iniciar drag de selección por columna (sin tocar filas)
-                      e.preventDefault();
-                      e.stopPropagation();
-                      headerDragging.current = true;
-                      headerDragStart.current = colIdx;
-                      // iniciar selección: si Shift está presionado, expandir desde selectionStart o selected; si no, iniciar nueva selección en toda la columna
-                      if (shiftPressed.current) {
-                        if (selectionStart && selectionEnd) {
-                          // mantener selecciónStart y solo cambiar selectionEnd columna
-                          setSelectionEnd(prev => prev ? { row: prev.row, col: colIdx } : { row: 0, col: colIdx });
-                        } else {
-                          // si no hay selectionStart, anclar la selección a la columna clicada (no a `selected` que pueda pertenecer a otra columna)
-                          setSelectionStart({ row: 0, col: colIdx });
-                          setSelectionEnd({ row: data.length - 1, col: colIdx });
-                        }
+        <div className="flex items-center gap-2">
+          <label className="text-sm">Freeze R:</label>
+          <input type="number" value={freezeRows} onChange={e => setFreezeRows(Number(e.target.value) || 0)} className="w-16 px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
+          <label className="text-sm">C:</label>
+          <input type="number" value={freezeCols} onChange={e => setFreezeCols(Number(e.target.value) || 0)} className="w-16 px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <TooltipCooldown content="Ordena el rango seleccionado por la columna actual" cooldown={1500}>
+            <button onClick={() => { setShowSortModal(true); setSortColInput(getColName(selectionStart?.col ?? 0)); }} className={`${BTN} bg-indigo-500 text-white`}>Sort Range</button>
+          </TooltipCooldown>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <TooltipCooldown content="Agrega formato condicional al rango seleccionado" cooldown={1500}>
+            <button onClick={() => { setShowCFModal(true); setCfTypeInput('gt'); setCfValueInput('0'); setCfColorInput('#fffbcc'); }} className={`${BTN} bg-pink-500 text-white`}>Add Conditional Format</button>
+          </TooltipCooldown>
+        </div>
+      </div>
+
+      {/* Botones nuevos (CONCAT, DATE, TODAY) */}
+      <div className="flex gap-4 justify-center mb-4 w-full">
+        <TooltipCooldown content="Concatena los valores de la selección" cooldown={1500}>
+          <button onClick={() => applyQuickFunc('CONCAT')} className={`${BTN} bg-yellow-600 hover:bg-yellow-700 text-white`}>CONCAT</button>
+        </TooltipCooldown>
+        <TooltipCooldown content="Crea una fecha con año, mes y día (usa las 3 primeras celdas de la selección)" cooldown={1500}>
+          <button onClick={() => {
+            if (!selectionStart || !selectionEnd) return;
+            const r1 = Math.min(selectionStart.row, selectionEnd.row);
+            const c1 = Math.min(selectionStart.col, selectionEnd.col);
+            const vals: string[] = [];
+            for (let i = 0; i < 3; i++) {
+              vals.push(String(data[r1]?.[c1 + i] ?? ''));
+            }
+            setFormulaText(`=DATE(${vals.join(',')})`);
+          }} className={`${BTN} bg-green-500 hover:bg-green-600 text-white`}>DATE</button>
+        </TooltipCooldown>
+        <TooltipCooldown content="Inserta la fecha actual en la celda seleccionada" cooldown={1500}>
+          <button onClick={() => setFormulaText('=TODAY()')} className={`${BTN} bg-blue-500 hover:bg-blue-600 text-white`}>TODAY</button>
+        </TooltipCooldown>
+      </div>
+      {/* Botones de combinar y separar celdas debajo de los controles principales */}
+      <div className="flex gap-4 justify-center mb-4 w-full">
+        <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
+          <button onClick={combineCells} className={`${BTN} bg-purple-600 hover:bg-purple-700 text-white`}>Combinar celdas</button>
+        </TooltipCooldown>
+        <TooltipCooldown content="Separa las celdas combinadas seleccionadas" cooldown={1500}>
+          <button onClick={separateCells} className={`${BTN} bg-pink-600 hover:bg-pink-700 text-white`}>Separar celdas</button>
+        </TooltipCooldown>
+      </div>
+
+      {/* Barra de fórmulas similar a Excel */}
+      <div className="mb-3 border rounded p-2 shadow-sm flex items-center gap-3 bg-white dark:bg-gray-800">
+        <div className="text-sm w-16 text-center font-medium text-gray-600 dark:text-amber-300">fx</div>
+        <textarea
+          value={formulaText}
+          onChange={e => setFormulaText(e.target.value)}
+          className="flex-1 p-2 border rounded resize-none h-10 text-sm bg-white dark:bg-gray-800 dark:text-gray-100"
+          placeholder="Barra de fórmulas"
+        />
+        <div className="flex items-center gap-2">
+          <TooltipCooldown content="Aplica la fórmula escrita a la selección (V)" cooldown={1500}>
+            <button onClick={applyFormulaToSelection} className={`${BTN} w-9 px-0 bg-green-600 hover:bg-green-700 text-white`}>V</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Limpia la fórmula y la selección (X)" cooldown={1500}>
+            <button onClick={clearFormulaAndSelection} className={`${BTN} w-9 px-0 bg-red-600 hover:bg-red-700 text-white`}>X</button>
+          </TooltipCooldown>
+        </div>
+        <div className="ml-4 text-sm text-gray-700">
+          {computedSum != null ? <span className="font-semibold">Preview: {computedSum.toLocaleString()}</span> : <span className="text-gray-400">Preview: —</span>}
+        </div>
+        <div className="ml-4 flex items-center gap-2">
+          <TooltipCooldown content="Suma los valores de la selección" cooldown={1500}>
+            <button onClick={() => applyQuickFunc('SUM')} className={`${BTN} bg-blue-600 hover:bg-blue-700 text-white`}>SUM</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Calcula el promedio de la selección" cooldown={1500}>
+            <button onClick={() => applyQuickFunc('AVERAGE')} className={`${BTN} bg-indigo-600 hover:bg-indigo-700 text-white`}>AVERAGE</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Cuenta las celdas con valor en la selección" cooldown={1500}>
+            <button onClick={() => applyQuickFunc('COUNT')} className={`${BTN} bg-gray-600 hover:bg-gray-700 text-white`}>COUNT</button>
+          </TooltipCooldown>
+        </div>
+      </div>
+
+      <div className="overflow-auto border rounded shadow-sm bg-white dark:bg-gray-800">
+        <table ref={tableRef} className="min-w-[1200px] w-full table-fixed" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+          <thead className="sticky top-0 bg-gray-100 dark:bg-gray-700">
+            <tr>
+              <th className="bg-gray-100 text-gray-700 border-r border-gray-200 w-10 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">&nbsp;</th>
+              {Array.from({ length: data[0].length }).map((_, colIdx) => (
+                <th key={colIdx} data-header-col={colIdx} className="bg-gray-100 text-gray-700 text-center font-medium border-b border-gray-200 relative dark:bg-gray-700 dark:text-gray-200" style={{ width: colWidths[colIdx], height: 36 }}
+                  onMouseDown={e => {
+                    // iniciar drag de selección por columna (sin tocar filas)
+                    e.preventDefault();
+                    e.stopPropagation();
+                    headerDragging.current = true;
+                    headerDragStart.current = colIdx;
+                    // iniciar selección: si Shift está presionado, expandir desde selectionStart o selected; si no, iniciar nueva selección en toda la columna
+                    if (shiftPressed.current) {
+                      if (selectionStart && selectionEnd) {
+                        // mantener selecciónStart y solo cambiar selectionEnd columna
+                        setSelectionEnd(prev => prev ? { row: prev.row, col: colIdx } : { row: 0, col: colIdx });
                       } else {
-                        // seleccionar solo la columna completa (todas las filas)
+                        // si no hay selectionStart, anclar la selección a la columna clicada (no a `selected` que pueda pertenecer a otra columna)
                         setSelectionStart({ row: 0, col: colIdx });
                         setSelectionEnd({ row: data.length - 1, col: colIdx });
-                        setSelected({ row: 0, col: colIdx });
                       }
-                    }}
-                    onClick={e => {
-                      e.stopPropagation();
-                      if (hadDragSinceMouseDown.current) { hadDragSinceMouseDown.current = false; return; }
-                      // Ctrl+click toggleea la columna en extraSelections
-                      if (ctrlPressed.current) {
-                        const exists = extraSelections.find(s => s.c1 === colIdx && s.c2 === colIdx);
-                        if (exists) {
-                          setExtraSelections(prev => prev.filter(s => !(s.c1 === colIdx && s.c2 === colIdx)));
-                        } else {
-                          setExtraSelections(prev => [...prev, { r1: 0, c1: colIdx, r2: data.length - 1, c2: colIdx }]);
-                        }
-                        return;
-                      }
-                      // limpiar selecciones aditivas previas y establecer nueva selección
-                      setExtraSelections([]);
+                    } else {
+                      // seleccionar solo la columna completa (todas las filas)
                       setSelectionStart({ row: 0, col: colIdx });
                       setSelectionEnd({ row: data.length - 1, col: colIdx });
                       setSelected({ row: 0, col: colIdx });
-                    }}
-                  >
-                    <div className="flex items-center justify-between px-2">
-                      <span className="select-none">{getColName(colIdx)}</span>
-                      <div
-                        className="absolute top-0 bottom-0 cursor-col-resize z-40"
-                        style={{ right: -6, width: 12 }}
-                        onMouseDown={e => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          resizingCol.current = colIdx;
-                          startX.current = e.clientX;
-                          startWidth.current = colWidths[colIdx] ?? 96;
-                          document.body.style.cursor = 'col-resize';
-                        }}
-                        onDoubleClick={() => {
-                          // resetear ancho a valor por defecto
-                          setColWidths(prev => {
-                            const next = [...prev];
-                            next[colIdx] = 96;
-                            return next;
-                          });
-                        }}
-                      />
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, rowIdx) => (
-                <tr key={rowIdx} className="align-top">
-                  <th className="bg-gray-50 text-gray-600 border-r border-gray-100 w-10 text-center font-medium dark:bg-gray-700 dark:text-gray-200" style={{ height: 36 }}>{rowIdx + 1}</th>
-                  {row.map((cell, colIdx) => {
-                    // comprobar si esta celda está cubierta por un merge existente (y si no es la cabecera del merge)
-                    const covering = merges.find(m => rowIdx >= m.r && rowIdx < m.r + m.rows && colIdx >= m.c && colIdx < m.c + m.cols);
-                    if (covering) {
-                      // si no es la celda inicial del merge, omitimos el render (queda cubierta)
-                      if (covering.r !== rowIdx || covering.c !== colIdx) return null;
-                      // si es la celda inicial, renderizamos con rowSpan/colSpan
-                      const isMultiSelected = isCellInSelections(rowIdx, colIdx) || isCellInSelections(covering.r + covering.rows - 1, covering.c + covering.cols - 1);
-                      // calcular ancho como suma de anchos de las columnas cubiertas
-                      const spanWidth = colWidths.slice(colIdx, colIdx + covering.cols).reduce((a, b) => a + (b ?? 96), 0);
-                      const cs = computeCellStyles(rowIdx, colIdx);
-                      return (
-                        <Cell
-                          key={colIdx}
-                          value={cell}
-                          row={rowIdx}
-                          col={colIdx}
-                          rowSpan={covering.rows}
-                          colSpan={covering.cols}
-                          width={spanWidth}
-                          height={36 * covering.rows}
-                          isSelected={!!(selected && selected.row === rowIdx && selected.col === colIdx)}
-                          isMultiSelected={isMultiSelected}
-                          isDragging={isDragging}
-                          onCommit={commitCell}
-                          onMouseDown={onCellMouseDown}
-                          onMouseEnter={onCellMouseEnter}
-                          onMouseUp={onCellMouseUp}
-                          onClick={onCellClick}
-                          extraStyle={cs.style}
-                          extraClass={cs.cls}
-                        />
-                      );
                     }
-
-                    const isSelected = selected && selected.row === rowIdx && selected.col === colIdx;
-                    const isMultiSelected = isCellInSelections(rowIdx, colIdx);
+                  }}
+                  onClick={e => {
+                    e.stopPropagation();
+                    if (hadDragSinceMouseDown.current) { hadDragSinceMouseDown.current = false; return; }
+                    // Ctrl+click toggleea la columna en extraSelections
+                    if (ctrlPressed.current) {
+                      const exists = extraSelections.find(s => s.c1 === colIdx && s.c2 === colIdx);
+                      if (exists) {
+                        setExtraSelections(prev => prev.filter(s => !(s.c1 === colIdx && s.c2 === colIdx)));
+                      } else {
+                        setExtraSelections(prev => [...prev, { r1: 0, c1: colIdx, r2: data.length - 1, c2: colIdx }]);
+                      }
+                      return;
+                    }
+                    // limpiar selecciones aditivas previas y establecer nueva selección
+                    setExtraSelections([]);
+                    setSelectionStart({ row: 0, col: colIdx });
+                    setSelectionEnd({ row: data.length - 1, col: colIdx });
+                    setSelected({ row: 0, col: colIdx });
+                  }}
+                >
+                  <div className="flex items-center justify-between px-2">
+                    <span className="select-none">{getColName(colIdx)}</span>
+                    <div
+                      className="absolute top-0 bottom-0 cursor-col-resize z-40"
+                      style={{ right: -6, width: 12 }}
+                      onMouseDown={e => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        resizingCol.current = colIdx;
+                        startX.current = e.clientX;
+                        startWidth.current = colWidths[colIdx] ?? 96;
+                        document.body.style.cursor = 'col-resize';
+                      }}
+                      onDoubleClick={() => {
+                        // resetear ancho a valor por defecto
+                        setColWidths(prev => {
+                          const next = [...prev];
+                          next[colIdx] = 96;
+                          return next;
+                        });
+                      }}
+                    />
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row, rowIdx) => (
+              <tr key={rowIdx} className="align-top">
+                <th className="bg-gray-50 text-gray-600 border-r border-gray-100 w-10 text-center font-medium dark:bg-gray-700 dark:text-gray-200" style={{ height: 36 }}>{rowIdx + 1}</th>
+                {row.map((cell, colIdx) => {
+                  // comprobar si esta celda está cubierta por un merge existente (y si no es la cabecera del merge)
+                  const covering = merges.find(m => rowIdx >= m.r && rowIdx < m.r + m.rows && colIdx >= m.c && colIdx < m.c + m.cols);
+                  if (covering) {
+                    // si no es la celda inicial del merge, omitimos el render (queda cubierta)
+                    if (covering.r !== rowIdx || covering.c !== colIdx) return null;
+                    // si es la celda inicial, renderizamos con rowSpan/colSpan
+                    const isMultiSelected = isCellInSelections(rowIdx, colIdx) || isCellInSelections(covering.r + covering.rows - 1, covering.c + covering.cols - 1);
+                    // calcular ancho como suma de anchos de las columnas cubiertas
+                    const spanWidth = colWidths.slice(colIdx, colIdx + covering.cols).reduce((a, b) => a + (b ?? 96), 0);
                     const cs = computeCellStyles(rowIdx, colIdx);
                     return (
                       <Cell
@@ -1662,9 +1702,11 @@ const ExcelComponent: React.FC = () => {
                         value={cell}
                         row={rowIdx}
                         col={colIdx}
-                        width={colWidths[colIdx]}
-                        height={36}
-                        isSelected={!!isSelected}
+                        rowSpan={covering.rows}
+                        colSpan={covering.cols}
+                        width={spanWidth}
+                        height={36 * covering.rows}
+                        isSelected={!!(selected && selected.row === rowIdx && selected.col === colIdx)}
                         isMultiSelected={isMultiSelected}
                         isDragging={isDragging}
                         onCommit={commitCell}
@@ -1676,118 +1718,143 @@ const ExcelComponent: React.FC = () => {
                         extraClass={cs.cls}
                       />
                     );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  }
 
-    {/* Modales y Toasts */}
-    {showSortModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-  <div className="bg-white p-4 rounded shadow-lg w-80 dark:bg-gray-800 dark:text-gray-100">
-          <h3 className="font-bold mb-2">Sort Range</h3>
-          <div className="mb-2">
-            <label className="block text-xs">Columna (ej: A)</label>
-            <input value={sortColInput} onChange={e=>setSortColInput(e.target.value)} className="w-full px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
-          </div>
-          <div className="mb-3">
-            <label className="block text-xs">Dirección</label>
-            <div className="relative group">
-              <select value={sortDirection} onChange={e=>setSortDirection(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
-                <option value="asc">Ascendente</option>
-                <option value="desc">Descendente</option>
-              </select>
-              <span className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 transition-transform duration-200 group-focus-within:rotate-180">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </span>
+                  const isSelected = selected && selected.row === rowIdx && selected.col === colIdx;
+                  const isMultiSelected = isCellInSelections(rowIdx, colIdx);
+                  const cs = computeCellStyles(rowIdx, colIdx);
+                  return (
+                    <Cell
+                      key={colIdx}
+                      value={cell}
+                      row={rowIdx}
+                      col={colIdx}
+                      width={colWidths[colIdx]}
+                      height={36}
+                      isSelected={!!isSelected}
+                      isMultiSelected={isMultiSelected}
+                      isDragging={isDragging}
+                      onCommit={commitCell}
+                      onMouseDown={onCellMouseDown}
+                      onMouseEnter={onCellMouseEnter}
+                      onMouseUp={onCellMouseUp}
+                      onClick={onCellClick}
+                      extraStyle={cs.style}
+                      extraClass={cs.cls}
+                    />
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modales y Toasts */}
+      {showSortModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white p-4 rounded shadow-lg w-80 dark:bg-gray-800 dark:text-gray-100">
+            <h3 className="font-bold mb-2">Sort Range</h3>
+            <div className="mb-2">
+              <label className="block text-xs">Columna (ej: A)</label>
+              <input value={sortColInput} onChange={e => setSortColInput(e.target.value)} className="w-full px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
+            </div>
+            <div className="mb-3">
+              <label className="block text-xs">Dirección</label>
+              <div className="relative group">
+                <select value={sortDirection} onChange={e => setSortDirection(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+                  <option value="asc">Ascendente</option>
+                  <option value="desc">Descendente</option>
+                </select>
+                <span className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 transition-transform duration-200 group-focus-within:rotate-180">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowSortModal(false)} className={`${BTN} border`}>Cancelar</button>
+              <button onClick={() => { const ci = colNameToIndex(sortColInput); setShowSortModal(false); sortRangeByColumn(ci, sortDirection); }} className={`${BTN} bg-indigo-600 text-white`}>Aplicar</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {showCombineConfirm && pendingCombineBox && (
+        <Modal title="Confirmar combinación" onClose={() => { setShowCombineConfirm(false); setPendingCombineBox(null); }}>
+          <div className="mb-3 text-sm">La selección con Ctrl+click no es contigua. Se propone combinar el rectángulo {`(${pendingCombineBox.r1 + 1}, ${pendingCombineBox.c1 + 1}) - (${pendingCombineBox.r2 + 1}, ${pendingCombineBox.c2 + 1})`}. ¿Continuar?</div>
           <div className="flex justify-end gap-2">
-            <button onClick={()=>setShowSortModal(false)} className={`${BTN} border`}>Cancelar</button>
-            <button onClick={()=>{ const ci = colNameToIndex(sortColInput); setShowSortModal(false); sortRangeByColumn(ci, sortDirection); }} className={`${BTN} bg-indigo-600 text-white`}>Aplicar</button>
+            <button onClick={() => { setShowCombineConfirm(false); setPendingCombineBox(null); }} className={`${BTN} border`}>Cancelar</button>
+            <button onClick={() => { if (pendingCombineBox) performCombineRegion(pendingCombineBox.r1, pendingCombineBox.r2, pendingCombineBox.c1, pendingCombineBox.c2); setShowCombineConfirm(false); setPendingCombineBox(null); }} className={`${BTN} bg-purple-600 text-white`}>Confirmar</button>
           </div>
-        </div>
-      </div>
-    )}
+        </Modal>
+      )}
 
-    {showCombineConfirm && pendingCombineBox && (
-      <Modal title="Confirmar combinación" onClose={() => { setShowCombineConfirm(false); setPendingCombineBox(null); }}>
-        <div className="mb-3 text-sm">La selección con Ctrl+click no es contigua. Se propone combinar el rectángulo {`(${pendingCombineBox.r1 + 1}, ${pendingCombineBox.c1 + 1}) - (${pendingCombineBox.r2 + 1}, ${pendingCombineBox.c2 + 1})`}. ¿Continuar?</div>
-        <div className="flex justify-end gap-2">
-          <button onClick={() => { setShowCombineConfirm(false); setPendingCombineBox(null); }} className={`${BTN} border`}>Cancelar</button>
-          <button onClick={() => { if (pendingCombineBox) performCombineRegion(pendingCombineBox.r1, pendingCombineBox.r2, pendingCombineBox.c1, pendingCombineBox.c2); setShowCombineConfirm(false); setPendingCombineBox(null); }} className={`${BTN} bg-purple-600 text-white`}>Confirmar</button>
-        </div>
-      </Modal>
-    )}
-
-    {showCFModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-  <div className="bg-white p-4 rounded shadow-lg w-80 dark:bg-gray-800 dark:text-gray-100">
-          <h3 className="font-bold mb-2">Add Conditional Format</h3>
-          <div className="mb-2">
-            <label className="block text-xs">Tipo</label>
-            <div className="relative group">
-              <select value={cfTypeInput} onChange={e=>setCfTypeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
-                <option value="gt">Greater than (gt)</option>
-                <option value="lt">Less than (lt)</option>
-                <option value="eq">Equals (eq)</option>
-                <option value="contains">Contains</option>
-              </select>
-              <span className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 transition-transform duration-200 group-focus-within:rotate-180">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </span>
+      {showCFModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white p-4 rounded shadow-lg w-80 dark:bg-gray-800 dark:text-gray-100">
+            <h3 className="font-bold mb-2">Add Conditional Format</h3>
+            <div className="mb-2">
+              <label className="block text-xs">Tipo</label>
+              <div className="relative group">
+                <select value={cfTypeInput} onChange={e => setCfTypeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+                  <option value="gt">Greater than (gt)</option>
+                  <option value="lt">Less than (lt)</option>
+                  <option value="eq">Equals (eq)</option>
+                  <option value="contains">Contains</option>
+                </select>
+                <span className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 transition-transform duration-200 group-focus-within:rotate-180">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <div className="mb-2">
+              <label className="block text-xs">Valor</label>
+              <input value={cfValueInput} onChange={e => setCfValueInput(e.target.value)} className="w-full px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
+            </div>
+            <div className="mb-2">
+              <label className="block text-xs">Scope</label>
+              <div className="relative group">
+                <select value={cfScopeInput} onChange={e => setCfScopeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+                  <option value="selection">Selección actual</option>
+                  <option value="sheet">Toda la hoja</option>
+                </select>
+                <span className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 transition-transform duration-200 group-focus-within:rotate-180">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <div className="mb-3">
+              <label className="block text-xs">Color de fondo</label>
+              <input type="color" value={cfColorInput} onChange={e => setCfColorInput(e.target.value)} className="w-full h-9 p-1 border rounded" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowCFModal(false)} className={`${BTN} border`}>Cancelar</button>
+              <button
+                onClick={() => { setShowCFModal(false); addConditionalFormat(cfTypeInput, cfValueInput, cfColorInput, cfScopeInput); }}
+                disabled={cfScopeInput === 'selection' && !(selectionStart && selectionEnd)}
+                title={cfScopeInput === 'selection' && !(selectionStart && selectionEnd) ? 'Selecciona un rango antes de añadir formato condicional' : 'Añadir formato condicional'}
+                className={
+                  (cfScopeInput === 'selection' && !(selectionStart && selectionEnd))
+                    ? `${BTN} bg-pink-300 text-white opacity-60 cursor-not-allowed`
+                    : `${BTN} bg-pink-600 text-white`
+                }
+              >Añadir</button>
             </div>
           </div>
-          <div className="mb-2">
-            <label className="block text-xs">Valor</label>
-            <input value={cfValueInput} onChange={e=>setCfValueInput(e.target.value)} className="w-full px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
-          </div>
-          <div className="mb-2">
-            <label className="block text-xs">Scope</label>
-            <div className="relative group">
-              <select value={cfScopeInput} onChange={e=>setCfScopeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
-                <option value="selection">Selección actual</option>
-                <option value="sheet">Toda la hoja</option>
-              </select>
-              <span className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 transition-transform duration-200 group-focus-within:rotate-180">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </span>
-            </div>
-          </div>
-          <div className="mb-3">
-            <label className="block text-xs">Color de fondo</label>
-            <input type="color" value={cfColorInput} onChange={e=>setCfColorInput(e.target.value)} className="w-full h-9 p-1 border rounded" />
-          </div>
-          <div className="flex justify-end gap-2">
-            <button onClick={()=>setShowCFModal(false)} className={`${BTN} border`}>Cancelar</button>
-            <button
-              onClick={()=>{ setShowCFModal(false); addConditionalFormat(cfTypeInput, cfValueInput, cfColorInput, cfScopeInput); }}
-              disabled={cfScopeInput === 'selection' && !(selectionStart && selectionEnd)}
-              title={cfScopeInput === 'selection' && !(selectionStart && selectionEnd) ? 'Selecciona un rango antes de añadir formato condicional' : 'Añadir formato condicional'}
-              className={
-                (cfScopeInput === 'selection' && !(selectionStart && selectionEnd))
-                ? `${BTN} bg-pink-300 text-white opacity-60 cursor-not-allowed`
-                : `${BTN} bg-pink-600 text-white`
-              }
-            >Añadir</button>
-          </div>
         </div>
-      </div>
-    )}
+      )}
 
-    {toastMsg && (
-      <div className="fixed right-4 bottom-6 z-60 bg-black text-white h-9 px-3 flex items-center rounded shadow">{toastMsg}</div>
-    )}
+      {toastMsg && (
+        <div className="fixed right-4 bottom-6 z-60 bg-black text-white h-9 px-3 flex items-center rounded shadow">{toastMsg}</div>
+      )}
 
-      </div>
+    </div>
   );
 }
 
