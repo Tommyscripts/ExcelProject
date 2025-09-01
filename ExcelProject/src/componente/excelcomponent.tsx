@@ -6,8 +6,8 @@ import * as XLSX from 'xlsx';
 import Cell from './Auxiliares/Cell';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
-const INITIAL_COLS = 22; // A-V
-const INITIAL_ROWS = 46;
+const INITIAL_COLS = 25;
+const INITIAL_ROWS = 25;
 
 function getColName(idx: number) {
   return String.fromCharCode(65 + idx);

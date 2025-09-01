@@ -70,9 +70,13 @@ const Cell: React.FC<CellProps> = React.memo(function CellInner(props: CellProps
     };
   }, []);
 
+  // Determinar si la celda está combinada
+  const isMerged = (rowSpan && rowSpan > 1) || (colSpan && colSpan > 1);
+  const mergedBorderClass = 'border-2 border-blue-500';
+  const normalBorderClass = 'border border-gray-200 dark:border-gray-700';
   return (
     <td rowSpan={rowSpan} colSpan={colSpan} data-cell-row={row} data-cell-col={col}
-      className={`p-0 relative ${isSelected || isMultiSelected || isDragging ? 'ring-2 ring-blue-400 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-50 dark:text-white' : 'border border-gray-200 dark:border-gray-700'} ${extraClass || ''}`}
+      className={`p-0 relative ${isSelected || isMultiSelected || isDragging ? 'ring-2 ring-blue-400 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-50 dark:text-white' : isMerged ? mergedBorderClass : normalBorderClass} ${extraClass || ''}`}
       style={{ width, height, ...(extraStyle || {}) }}
       onMouseDown={() => onMouseDown(row, col)}
       onMouseEnter={() => {
