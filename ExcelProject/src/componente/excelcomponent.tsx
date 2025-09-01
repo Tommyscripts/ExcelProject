@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import TooltipCooldown from './Auxiliares/TooltipCooldown';
 import { FaTrash, FaCopy, FaPaste, FaExchangeAlt } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
+import Cell from './Cell';
 
 const INITIAL_COLS = 22; // A-V
 const INITIAL_ROWS = 46;
@@ -85,7 +86,7 @@ const ExcelComponent: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [future, setFuture] = useState<any[]>([]);
   const pushHistory = useCallback((snapshot?: any) => {
-    const snap = snapshot ?? JSON.parse(JSON.stringify({ data, merges, colWidths, selected, selectionStart, selectionEnd }));
+    const snap = snapshot ?? { data: JSON.parse(JSON.stringify(data)), merges: JSON.parse(JSON.stringify(merges)), colWidths: [...colWidths], selected, selectionStart, selectionEnd };
     setHistory(h => {
       const next = [...h, snap];
       if (next.length > HISTORY_LIMIT) next.shift();
@@ -98,11 +99,10 @@ const ExcelComponent: React.FC = () => {
     setHistory(h => {
       if (h.length === 0) return h;
       const last = h[h.length - 1];
-      setFuture(f => [JSON.parse(JSON.stringify({ data, merges, colWidths, selected, selectionStart, selectionEnd })), ...f]);
-      // restaurar
-      setData(last.data ?? last);
-      setMerges(last.merges ?? last.merges ?? last.merges ?? (last.merges || []));
-      setColWidths(last.colWidths ?? (last.colWidths || colWidths));
+      setFuture(f => [{ data: JSON.parse(JSON.stringify(data)), merges: JSON.parse(JSON.stringify(merges)), colWidths: [...colWidths], selected, selectionStart, selectionEnd }, ...f]);
+      if (last.data) setData(last.data);
+      if (last.merges) setMerges(last.merges);
+      if (last.colWidths) setColWidths(last.colWidths);
       setSelected(last.selected ?? null);
       setSelectionStart(last.selectionStart ?? null);
       setSelectionEnd(last.selectionEnd ?? null);
@@ -114,11 +114,10 @@ const ExcelComponent: React.FC = () => {
     setFuture(f => {
       if (f.length === 0) return f;
       const [first, ...rest] = f;
-      // push current into history
-      setHistory(h => [...h, JSON.parse(JSON.stringify({ data, merges, colWidths, selected, selectionStart, selectionEnd }))]);
-      setData(first.data ?? first);
-      setMerges(first.merges ?? (first.merges || []));
-      setColWidths(first.colWidths ?? (first.colWidths || colWidths));
+      setHistory(h => [...h, { data: JSON.parse(JSON.stringify(data)), merges: JSON.parse(JSON.stringify(merges)), colWidths: [...colWidths], selected, selectionStart, selectionEnd }]);
+      if (first.data) setData(first.data);
+      if (first.merges) setMerges(first.merges);
+      if (first.colWidths) setColWidths(first.colWidths);
       setSelected(first.selected ?? null);
       setSelectionStart(first.selectionStart ?? null);
       setSelectionEnd(first.selectionEnd ?? null);
@@ -394,7 +393,7 @@ const ExcelComponent: React.FC = () => {
       const next = prev.map(r => [...r]);
       const needCols = Math.max(0, startCol + toPaste[0].length - next[0].length);
       if (needCols > 0) {
-        for (let i = 0; i < needCols; i++) for (let rr = 0; rr < next.length; rr++) next[rr].push('');
+        for (let rr = 0; rr < next.length; rr++) for (let i = 0; i < needCols; i++) next[rr].push('');
       }
       const needRows = Math.max(0, startRow + toPaste.length - next.length);
       if (needRows > 0) {
@@ -408,6 +407,12 @@ const ExcelComponent: React.FC = () => {
         }
       }
       return next;
+    });
+    // Ensure colWidths length matches new width synchronously
+    setColWidths(prev => {
+      const newLen = Math.max(prev.length, (toPaste[0]?.length ?? 0) + startCol, (data[0]?.length ?? 0));
+      if (newLen <= prev.length) return prev;
+      return [...prev, ...Array(newLen - prev.length).fill(96)];
     });
   // highlight temporal con fade
   setPasteHighlight({ r1: startRow, c1: startCol, r2: startRow + toPaste.length - 1, c2: startCol + toPaste[0].length - 1 });
@@ -552,201 +557,7 @@ const ExcelComponent: React.FC = () => {
     showToast('Formato condicional añadido');
   };
 
-  // Memoized cell component to reduce re-renders while typing
-  // Defined inside component to capture types but memoized to avoid re-render when props unchanged
-  const Cell = React.useMemo(() => React.memo(function CellInner(props: {
-    value: string;
-    row: number;
-    col: number;
-    rowSpan?: number;
-    colSpan?: number;
-    width?: number;
-    height?: number;
-    isSelected?: boolean;
-    isMultiSelected?: boolean;
-    isDragging?: boolean;
-    onCommit: (row: number, col: number, value: string) => void;
-    onMouseDown: (r: number, c: number) => void;
-    onMouseEnter: (r: number, c: number) => void;
-    onMouseUp: () => void;
-    onClick: (r: number, c: number) => void;
-  }) {
-    const { value, row, col, rowSpan, colSpan, width, height, isSelected, isMultiSelected, isDragging, onCommit, onMouseDown, onMouseEnter, onMouseUp, onClick } = props;
-  // support additional style props passed via data-attributes
-  const [extraStyle, setExtraStyle] = useState<React.CSSProperties>({});
-  const [extraClass, setExtraClass] = useState<string>('');
-    const [local, setLocal] = useState<string>(value ?? '');
-    const isEditing = useRef(false);
-    const commitTimer = useRef<number | null>(null);
-
-    useEffect(() => {
-      // update local when value prop changes, unless user is editing
-      if (!isEditing.current) setLocal(value ?? '');
-    }, [value]);
-
-    const doCommit = useCallback(() => {
-      if (commitTimer.current) {
-        window.clearTimeout(commitTimer.current);
-        commitTimer.current = null;
-      }
-      if (local !== value) onCommit(row, col, local);
-    }, [local, value, row, col, onCommit]);
-
-    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setLocal(e.target.value);
-      // debounce commit
-      if (commitTimer.current) window.clearTimeout(commitTimer.current);
-      // commit after 300ms of inactivity
-      commitTimer.current = window.setTimeout(() => {
-        commitTimer.current = null;
-        if (local !== e.target.value) {
-          // local was updated above but closure may reference old value; use e.target.value
-          onCommit(row, col, e.target.value);
-        } else {
-          doCommit();
-        }
-      }, 300) as unknown as number;
-    };
-
-    const handleFocus = () => { isEditing.current = true; };
-    const handleBlur = () => { isEditing.current = false; doCommit(); };
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        (e.target as HTMLInputElement).blur();
-      }
-    };
-
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [hasOverflow, setHasOverflow] = useState(false);
-  // Mostrar tooltip con un cooldown para permitir manejar la celda sin que aparezca instantáneamente
-  const HOVER_DELAY_MS = 1500;
-  const hoverTimer = useRef<number | null>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
-
-    useEffect(() => {
-  if (!inputRef.current) return;
-      const el = inputRef.current;
-      const check = () => {
-        try {
-          const over = el.scrollWidth > el.clientWidth + 4; // small tolerance
-          setHasOverflow(!!over);
-        } catch (err) {
-          setHasOverflow(false);
-        }
-      };
-      check();
-      const ro = new ResizeObserver(check);
-      ro.observe(el);
-      return () => ro.disconnect();
-    }, [local, width]);
-
-    // leer atributos data-extra-style/data-extra-class del td parent al montar
-    useEffect(() => {
-      try {
-        const td = inputRef.current?.closest('td') as HTMLElement | null;
-        if (!td) return;
-        const s = (td.getAttribute('data-extra-style') || '');
-        const c = (td.getAttribute('data-extra-class') || '');
-        if (s) {
-          try { setExtraStyle(JSON.parse(s)); } catch (e) { /* ignore */ }
-        }
-        if (c) setExtraClass(c);
-      } catch (e) {
-        // ignore
-      }
-    }, []);
-
-    // limpiar timer si el componente se desmonta
-    useEffect(() => {
-      return () => {
-        if (hoverTimer.current) {
-          window.clearTimeout(hoverTimer.current);
-          hoverTimer.current = null;
-        }
-      };
-    }, []);
-
-    return (
-      <td rowSpan={rowSpan} colSpan={colSpan} data-cell-row={row} data-cell-col={col}
-  className={`p-0 relative ${isSelected || isMultiSelected || isDragging ? 'ring-2 ring-blue-400 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-50 dark:text-white' : 'border border-gray-200 dark:border-gray-700'} ${extraClass}`}
-  style={{ width, height, ...(extraStyle || {}) }}
-        onMouseDown={() => onMouseDown(row, col)}
-        onMouseEnter={() => {
-          onMouseEnter(row, col);
-          // si la celda está seleccionada, mostramos el tooltip inmediatamente
-          if (isSelected) {
-            if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
-            setShowTooltip(true);
-            return;
-          }
-          // iniciar cooldown para mostrar tooltip
-          if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-          setShowTooltip(false);
-          hoverTimer.current = window.setTimeout(() => {
-            hoverTimer.current = null;
-            setShowTooltip(true);
-          }, HOVER_DELAY_MS) as unknown as number;
-        }}
-        onMouseLeave={() => {
-          // cancelar cooldown y ocultar tooltip
-          if (hoverTimer.current) {
-            window.clearTimeout(hoverTimer.current);
-            hoverTimer.current = null;
-          }
-          setShowTooltip(false);
-        }}
-        onMouseUp={() => {
-          // al soltar, ejecutar handler y ocultar tooltip
-          if (hoverTimer.current) {
-            window.clearTimeout(hoverTimer.current);
-            hoverTimer.current = null;
-          }
-          setShowTooltip(false);
-          onMouseUp();
-        }}
-        onClick={() => {
-          if (hoverTimer.current) {
-            window.clearTimeout(hoverTimer.current);
-            hoverTimer.current = null;
-          }
-          setShowTooltip(false);
-          onClick(row, col);
-        }}>
-  <input
-          ref={inputRef}
-          type="text"
-          value={local}
-          onChange={onChange}
-          onMouseEnter={() => {
-            // Si la celda está seleccionada, mostramos tooltip inmediatamente.
-            if (isSelected) {
-              if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
-              setShowTooltip(true);
-              return;
-            }
-            // Si ya hay un timer o el tooltip ya se muestra, no reiniciamos nada.
-            if (showTooltip || hoverTimer.current) return;
-            hoverTimer.current = window.setTimeout(() => { hoverTimer.current = null; setShowTooltip(true); }, HOVER_DELAY_MS) as unknown as number;
-          }}
-          onMouseLeave={() => {
-            // no cancelamos aquí para evitar flicker cuando se mueve entre td y input;
-            // la salida del td es la que cancela el tooltip.
-          }}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          className="w-full h-full px-2 bg-transparent focus:outline-none text-sm cursor-text text-gray-900 dark:text-gray-100"
-          tabIndex={0}
-        />
-  {(showTooltip && !isEditing.current && String(local).trim() !== '') && (
-          <div className="absolute left-0 top-0 z-50 p-2 bg-white border rounded shadow-md text-sm max-w-[400px] break-words dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
-            <div className="text-xs text-gray-500 mb-1">Texto completo</div>
-            {local}
-          </div>
-        )}
-      </td>
-    );
-  }), []);
+  // Cell component moved to ./Cell.tsx (memoized there). Use that instead of inline definition.
 
   const addRow = () => {
     setData(prev => [...prev, Array(prev[0].length).fill('')]);
@@ -793,25 +604,20 @@ const ExcelComponent: React.FC = () => {
     }
   };
 
-  const handleChange = (row: number, col: number, value: string) => {
+  const handleChange = useCallback((row: number, col: number, value: string) => {
     setData(prev => {
       if (!prev[row]) return prev;
       const next = prev.map(r => [...r]);
       next[row][col] = value;
       return next;
     });
-  };
+  }, [setData]);
 
   const commitCell = useCallback((row: number, col: number, value: string) => {
     handleChange(row, col, value);
   }, [handleChange]);
 
-  const onCellMouseDown = useCallback((r: number, c: number) => handleCellMouseDown(r, c), [/* deps none, uses stable handleCellMouseDown */]);
-  const onCellMouseEnter = useCallback((r: number, c: number) => handleCellMouseEnter(r, c), []);
-  const onCellMouseUp = useCallback(() => handleCellMouseUp(), []);
-  const onCellClick = useCallback((r: number, c: number) => handleCellClick(r, c), []);
-
-  const handleCellClick = (row: number, col: number) => {
+  const handleCellClick = useCallback((row: number, col: number) => {
     // Si justo hubo un drag, ignorar el click (es el click generado al soltar)
     if (hadDragSinceMouseDown.current) {
       hadDragSinceMouseDown.current = false;
@@ -849,9 +655,9 @@ const ExcelComponent: React.FC = () => {
       return;
     }
     setSelected({ row, col });
-  };
+  }, [extraSelections, selectionStart, selectionEnd, selected]);
 
-  const handleCellMouseDown = (row: number, col: number) => {
+  const handleCellMouseDown = useCallback((row: number, col: number) => {
     // Iniciar posible selección por mousedown.
     // Si Shift está presionado y hay una celda previamente seleccionada, usarla como ancla.
     // Si no, anclar la selección a la celda clicada para evitar rangos accidentales.
@@ -865,25 +671,27 @@ const ExcelComponent: React.FC = () => {
       setSelected({ row, col });
     }
     setSelectionEnd({ row, col });
-  };
+  }, [selected]);
 
-  const handleCellMouseEnter = (row: number, col: number) => {
-    if (selectionStart) {
-      setSelectionEnd({ row, col });
-    }
+  const handleCellMouseEnter = useCallback((row: number, col: number) => {
+    if (selectionStart) setSelectionEnd({ row, col });
     // Si el usuario mantiene pulsado el ratón y mueve sobre otras celdas,
     // marcamos que hubo un arrastre para que el click posterior no lo reinterprete.
     if (isMouseDown.current) {
       hadDragSinceMouseDown.current = true;
     }
-  };
+  }, [selectionStart]);
 
-  const handleCellMouseUp = () => {
-  // No limpiamos selectionStart aquí para que la selección persista después de soltar.
-  // La selección se limpiará explícitamente en combineCells/separateCells o cuando el usuario la reemplace.
-  isMouseDown.current = false;
-  setIsDragging(false);
-  };
+  const handleCellMouseUp = useCallback(() => {
+    // No limpiamos selectionStart aquí para que la selección persista después de soltar.
+    isMouseDown.current = false;
+    setIsDragging(false);
+  }, []);
+
+  const onCellMouseDown = useCallback((r: number, c: number) => { handleCellMouseDown(r, c); }, [handleCellMouseDown]);
+  const onCellMouseEnter = useCallback((r: number, c: number) => { handleCellMouseEnter(r, c); }, [handleCellMouseEnter]);
+  const onCellMouseUp = useCallback(() => { handleCellMouseUp(); }, [handleCellMouseUp]);
+  const onCellClick = useCallback((r: number, c: number) => { handleCellClick(r, c); }, [handleCellClick]);
 
   // Listener global para asegurar que isDragging se desactive si el usuario suelta fuera de la tabla
   React.useEffect(() => {
@@ -1466,8 +1274,9 @@ const ExcelComponent: React.FC = () => {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      const dataBuf = ev.target?.result;
-      const workbook = XLSX.read(dataBuf, { type: 'binary' });
+      const arrayBuffer = ev.target?.result as ArrayBuffer | null;
+      if (!arrayBuffer) return;
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
       const json = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 });
@@ -1488,7 +1297,7 @@ const ExcelComponent: React.FC = () => {
         return Array.from({ length: needed }, (_, i) => prev[i] ?? 96);
       });
     };
-    reader.readAsBinaryString(file);
+  reader.readAsArrayBuffer(file);
     // limpiar
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -1769,9 +1578,8 @@ const ExcelComponent: React.FC = () => {
                           onMouseEnter={onCellMouseEnter}
                           onMouseUp={onCellMouseUp}
                           onClick={onCellClick}
-              // pasar estilos extra como props en data-attributes (Cell usa internal state)
-              data-extra-style={JSON.stringify(cs.style)}
-              data-extra-class={cs.cls}
+              extraStyle={cs.style}
+              extraClass={cs.cls}
                         />
                       );
                     }
@@ -1795,8 +1603,8 @@ const ExcelComponent: React.FC = () => {
                         onMouseEnter={onCellMouseEnter}
                         onMouseUp={onCellMouseUp}
                         onClick={onCellClick}
-            data-extra-style={JSON.stringify(cs.style)}
-            data-extra-class={cs.cls}
+            extraStyle={cs.style}
+            extraClass={cs.cls}
                       />
                     );
                   })}
