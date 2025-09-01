@@ -17,6 +17,8 @@ const createInitialData = (rows: number, cols: number) =>
   Array.from({ length: rows }, () => Array(cols).fill(''));
 
 const ExcelComponent: React.FC = () => {
+  // Estado para modo compacto/expandido de funciones
+  const [compactMode, setCompactMode] = useState(true);
   // Default = light (false). We ignore any previous localStorage value on load to ensure default light.
   const _initDark = false;
   const [darkMode, setDarkMode] = useState<boolean>(_initDark);
@@ -1640,63 +1642,95 @@ const ExcelComponent: React.FC = () => {
 
       {/* Botones nuevos (CONCAT, DATE, TODAY) */}
         <div className="flex gap-4 justify-center mb-4 w-full">
+          {/* Botón modo compacto/expandido */}
+          <button onClick={() => setCompactMode((v) => !v)} className={`${BTN} bg-gray-300 hover:bg-gray-400 text-gray-900 border border-gray-400`}>
+            {compactMode ? 'Vista avanzada' : 'Vista compacta'}
+          </button>
+
           {/* SUM/SUMIF menú */}
           <div className="relative">
             <button onClick={() => setShowSumMenu((v) => !v)} className={`${BTN} bg-blue-600 hover:bg-blue-700 text-white`}>SUM ▼</button>
             {showSumMenu && (
               <div className="absolute left-0 mt-2 bg-white dark:bg-gray-800 rounded shadow-lg z-10 flex flex-col">
-                <button onClick={() => { applyQuickFunc('SUM'); setShowSumMenu(false); }} className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 text-left">SUM</button>
-                <button onClick={() => { setFormulaText('=SUMIF(A1:A10,">5")'); setShowSumMenu(false); }} className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 text-left">SUMIF</button>
+                <button onClick={() => { applyQuickFunc('SUM'); setShowSumMenu(false); }} className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 text-left text-blue-700 dark:text-blue-300">SUM</button>
+                <button onClick={() => { setFormulaText('=SUMIF(A1:A10,">5")'); setShowSumMenu(false); }} className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 text-left text-blue-700 dark:text-blue-300">SUMIF</button>
               </div>
             )}
           </div>
           {/* COUNT/COUNTIF menú */}
           <div className="relative">
-            <button onClick={() => setShowCountMenu((v) => !v)} className={`${BTN} bg-gray-600 hover:bg-gray-700 text-white`}>COUNT ▼</button>
+            <button onClick={() => setShowCountMenu((v) => !v)} className={`${BTN} bg-blue-500 hover:bg-blue-600 text-white`}>COUNT ▼</button>
             {showCountMenu && (
               <div className="absolute left-0 mt-2 bg-white dark:bg-gray-800 rounded shadow-lg z-10 flex flex-col">
-                <button onClick={() => { applyQuickFunc('COUNT'); setShowCountMenu(false); }} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 text-left">COUNT</button>
-                <button onClick={() => { setFormulaText('=COUNTIF(A1:A10,"<3")'); setShowCountMenu(false); }} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 text-left">COUNTIF</button>
+                <button onClick={() => { applyQuickFunc('COUNT'); setShowCountMenu(false); }} className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 text-left text-blue-700 dark:text-blue-300">COUNT</button>
+                <button onClick={() => { setFormulaText('=COUNTIF(A1:A10,"<3")'); setShowCountMenu(false); }} className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 text-left text-blue-700 dark:text-blue-300">COUNTIF</button>
               </div>
             )}
           </div>
-          {/* Otros botones individuales */}
-          <TooltipCooldown content="Valor absoluto de la celda seleccionada" cooldown={1500}>
-            <button onClick={() => setFormulaText('=ABS(A1)')} className={`${BTN} bg-orange-500 hover:bg-orange-600 text-white`}>ABS</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Busca un valor en una columna y devuelve el relacionado de otra columna" cooldown={1500}>
-            <button onClick={() => setFormulaText('=VLOOKUP("valor",A1:B10,1)')} className={`${BTN} bg-teal-500 hover:bg-teal-600 text-white`}>VLOOKUP</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Evalúa si todas las condiciones son verdaderas" cooldown={1500}>
-            <button onClick={() => setFormulaText('=AND(true,false)')} className={`${BTN} bg-lime-500 hover:bg-lime-600 text-white`}>AND</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Evalúa si alguna condición es verdadera" cooldown={1500}>
-            <button onClick={() => setFormulaText('=OR(true,false)')} className={`${BTN} bg-yellow-500 hover:bg-yellow-600 text-white`}>OR</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Invierte el valor lógico" cooldown={1500}>
-            <button onClick={() => setFormulaText('=NOT(true)')} className={`${BTN} bg-pink-500 hover:bg-pink-600 text-white`}>NOT</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Elimina espacios extra de un texto" cooldown={1500}>
-            <button onClick={() => setFormulaText('=TRIM(A1)')} className={`${BTN} bg-gray-500 hover:bg-gray-600 text-white`}>TRIM</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Concatena los valores de la selección" cooldown={1500}>
-            <button onClick={() => applyQuickFunc('CONCAT')} className={`${BTN} bg-yellow-600 hover:bg-yellow-700 text-white`}>CONCAT</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Crea una fecha con año, mes y día (usa las 3 primeras celdas de la selección)" cooldown={1500}>
-            <button onClick={() => {
-              if (!selectionStart || !selectionEnd) return;
-              const r1 = Math.min(selectionStart.row, selectionEnd.row);
-              const c1 = Math.min(selectionStart.col, selectionEnd.col);
-              const vals: string[] = [];
-              for (let i = 0; i < 3; i++) {
-                vals.push(String(data[r1]?.[c1 + i] ?? ''));
-              }
-              setFormulaText(`=DATE(${vals.join(',')})`);
-            }} className={`${BTN} bg-green-500 hover:bg-green-600 text-white`}>DATE</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Inserta la fecha actual en la celda seleccionada" cooldown={1500}>
-            <button onClick={() => setFormulaText('=TODAY()')} className={`${BTN} bg-blue-500 hover:bg-blue-600 text-white`}>TODAY</button>
-          </TooltipCooldown>
+
+          {/* ABS: matemáticas, azul */}
+          {!compactMode && (
+            <TooltipCooldown content="Valor absoluto de la celda seleccionada" cooldown={1500}>
+              <button onClick={() => setFormulaText('=ABS(A1)')} className={`${BTN} bg-blue-400 hover:bg-blue-500 text-white`}>ABS</button>
+            </TooltipCooldown>
+          )}
+          {/* VLOOKUP: matemáticas, azul */}
+          {!compactMode && (
+            <TooltipCooldown content="Busca un valor en una columna y devuelve el relacionado de otra columna" cooldown={1500}>
+              <button onClick={() => setFormulaText('=VLOOKUP("valor",A1:B10,1)')} className={`${BTN} bg-blue-300 hover:bg-blue-400 text-white`}>VLOOKUP</button>
+            </TooltipCooldown>
+          )}
+          {/* AND: lógica, naranja */}
+          {!compactMode && (
+            <TooltipCooldown content="Evalúa si todas las condiciones son verdaderas" cooldown={1500}>
+              <button onClick={() => setFormulaText('=AND(true,false)')} className={`${BTN} bg-yellow-400 hover:bg-yellow-500 text-white`}>AND</button>
+            </TooltipCooldown>
+          )}
+          {/* OR: lógica, naranja */}
+          {!compactMode && (
+            <TooltipCooldown content="Evalúa si alguna condición es verdadera" cooldown={1500}>
+              <button onClick={() => setFormulaText('=OR(true,false)')} className={`${BTN} bg-yellow-300 hover:bg-yellow-400 text-white`}>OR</button>
+            </TooltipCooldown>
+          )}
+          {/* NOT: lógica, naranja */}
+          {!compactMode && (
+            <TooltipCooldown content="Invierte el valor lógico" cooldown={1500}>
+              <button onClick={() => setFormulaText('=NOT(true)')} className={`${BTN} bg-yellow-500 hover:bg-yellow-600 text-white`}>NOT</button>
+            </TooltipCooldown>
+          )}
+          {/* TRIM: lógica, naranja */}
+          {!compactMode && (
+            <TooltipCooldown content="Elimina espacios extra de un texto" cooldown={1500}>
+              <button onClick={() => setFormulaText('=TRIM(A1)')} className={`${BTN} bg-yellow-200 hover:bg-yellow-300 text-gray-900`}>TRIM</button>
+            </TooltipCooldown>
+          )}
+          {/* CONCAT: matemáticas, azul */}
+          {!compactMode && (
+            <TooltipCooldown content="Concatena los valores de la selección" cooldown={1500}>
+              <button onClick={() => applyQuickFunc('CONCAT')} className={`${BTN} bg-blue-200 hover:bg-blue-300 text-gray-900`}>CONCAT</button>
+            </TooltipCooldown>
+          )}
+          {/* DATE: confirmatoria, verde */}
+          {!compactMode && (
+            <TooltipCooldown content="Crea una fecha con año, mes y día (usa las 3 primeras celdas de la selección)" cooldown={1500}>
+              <button onClick={() => {
+                if (!selectionStart || !selectionEnd) return;
+                const r1 = Math.min(selectionStart.row, selectionEnd.row);
+                const c1 = Math.min(selectionStart.col, selectionEnd.col);
+                const vals: string[] = [];
+                for (let i = 0; i < 3; i++) {
+                  vals.push(String(data[r1]?.[c1 + i] ?? ''));
+                }
+                setFormulaText(`=DATE(${vals.join(',')})`);
+              }} className={`${BTN} bg-green-500 hover:bg-green-600 text-white`}>DATE</button>
+            </TooltipCooldown>
+          )}
+          {/* TODAY: confirmatoria, verde */}
+          {!compactMode && (
+            <TooltipCooldown content="Inserta la fecha actual en la celda seleccionada" cooldown={1500}>
+              <button onClick={() => setFormulaText('=TODAY()')} className={`${BTN} bg-green-400 hover:bg-green-500 text-white`}>TODAY</button>
+            </TooltipCooldown>
+          )}
         </div>
       {/* Botones de combinar y separar celdas debajo de los controles principales */}
       <div className="flex gap-4 justify-center mb-4 w-full">
