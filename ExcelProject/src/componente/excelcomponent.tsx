@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import TooltipCooldown from './Auxiliares/TooltipCooldown';
 import { FaTrash, FaCopy, FaPaste, FaExchangeAlt } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
-import Cell from './Cell';
+import Cell from './Auxiliares/Cell';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 const INITIAL_COLS = 22; // A-V
