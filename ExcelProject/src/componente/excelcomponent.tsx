@@ -1100,6 +1100,100 @@ const ExcelComponent: React.FC = () => {
       return { value: allTexts.join(''), func };
     }
 
+      // ABS: valor absoluto de un número
+      if (func === 'ABS') {
+        if (argParts.length === 1) {
+          const n = Number(argParts[0]);
+          return { value: Math.abs(n), func };
+        }
+        return { value: 0, func };
+      }
+
+      // TRIM: elimina espacios extra de un texto
+      if (func === 'TRIM') {
+        if (argParts.length === 1) {
+          return { value: String(argParts[0]).trim(), func };
+        }
+        return { value: '', func };
+      }
+
+      // NOT: invierte el valor lógico
+      if (func === 'NOT') {
+        if (argParts.length === 1) {
+          const v = argParts[0].toLowerCase();
+          return { value: !(v === 'true' || v === '1'), func };
+        }
+        return { value: false, func };
+      }
+
+      // AND: todas las condiciones deben ser verdaderas
+      if (func === 'AND') {
+        const res = argParts.every(p => p.toLowerCase() === 'true' || p === '1');
+        return { value: res, func };
+      }
+
+      // OR: alguna condición debe ser verdadera
+      if (func === 'OR') {
+        const res = argParts.some(p => p.toLowerCase() === 'true' || p === '1');
+        return { value: res, func };
+      }
+
+      // SUMIF: suma valores que cumplen una condición simple (ejemplo: >5)
+      if (func === 'SUMIF') {
+        // SUMIF(rango, condicion)
+        if (argParts.length === 2) {
+          const range = parseRangeArg(argParts[0]);
+          if (!range) return { value: 0, func };
+          const cond = argParts[1];
+          let sum = 0;
+          for (let r = range.r1; r <= range.r2; r++) {
+            for (let c = range.c1; c <= range.c2; c++) {
+              const val = Number(data[r]?.[c]);
+              if (eval(`val${cond}`)) sum += val;
+            }
+          }
+          return { value: sum, func };
+        }
+        return { value: 0, func };
+      }
+
+      // COUNTIF: cuenta valores que cumplen una condición simple (ejemplo: >5)
+      if (func === 'COUNTIF') {
+        // COUNTIF(rango, condicion)
+        if (argParts.length === 2) {
+          const range = parseRangeArg(argParts[0]);
+          if (!range) return { value: 0, func };
+          const cond = argParts[1];
+          let count = 0;
+          for (let r = range.r1; r <= range.r2; r++) {
+            for (let c = range.c1; c <= range.c2; c++) {
+              const val = Number(data[r]?.[c]);
+              if (eval(`val${cond}`)) count++;
+            }
+          }
+          return { value: count, func };
+        }
+        return { value: 0, func };
+      }
+
+      // VLOOKUP: busca un valor en una columna y devuelve el relacionado de otra columna
+      if (func === 'VLOOKUP') {
+        // VLOOKUP(valor, rango_busqueda, col_retorno)
+        if (argParts.length >= 3) {
+          const searchVal = argParts[0];
+          const range = parseRangeArg(argParts[1]);
+          const retColIdx = Number(argParts[2]);
+          if (!range || isNaN(retColIdx)) return { value: '', func };
+          for (let r = range.r1; r <= range.r2; r++) {
+            if (String(data[r]?.[range.c1]) === searchVal) {
+              return { value: data[r]?.[range.c1 + retColIdx] ?? '', func };
+            }
+          }
+          return { value: '', func };
+        }
+        return { value: '', func };
+      }
+
     // DATE: construye una fecha a partir de argumentos (año, mes, día)
     if (func === 'DATE') {
       // Espera argumentos: año, mes, día
@@ -1412,6 +1506,10 @@ const ExcelComponent: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // Estado para mostrar/ocultar el menú COUNT/COUNTIF
+  const [showCountMenu, setShowCountMenu] = useState(false);
+  // Estado para mostrar/ocultar el menú SUM/SUMIF
+  const [showSumMenu, setShowSumMenu] = useState(false);
   // Estilos globales para modo oscuro/claro
   // We rely on Tailwind `dark:` variants for styling. No injected CSS needed.
 
@@ -1420,8 +1518,8 @@ const ExcelComponent: React.FC = () => {
       <div className="max-w-full mx-auto relative">
         <div className="flex items-center justify-between mb-3 gap-3">
           <div className="flex items-center gap-2">
-        {/* Botones de combinar y separar celdas debajo de copiar/pegar/transponer */}
-        <div className="flex gap-4 justify-center mb-2 w-full">
+        {/* Botones de combinar y separar celdas alineados a la izquierda */}
+        <div className="flex gap-4 mb-2 w-full justify-start">
           <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
             <button onClick={combineCells} className={`${BTN} bg-purple-600 hover:bg-purple-700 text-white`}>Combinar celdas</button>
           </TooltipCooldown>
@@ -1541,26 +1639,65 @@ const ExcelComponent: React.FC = () => {
       </div>
 
       {/* Botones nuevos (CONCAT, DATE, TODAY) */}
-      <div className="flex gap-4 justify-center mb-4 w-full">
-        <TooltipCooldown content="Concatena los valores de la selección" cooldown={1500}>
-          <button onClick={() => applyQuickFunc('CONCAT')} className={`${BTN} bg-yellow-600 hover:bg-yellow-700 text-white`}>CONCAT</button>
-        </TooltipCooldown>
-        <TooltipCooldown content="Crea una fecha con año, mes y día (usa las 3 primeras celdas de la selección)" cooldown={1500}>
-          <button onClick={() => {
-            if (!selectionStart || !selectionEnd) return;
-            const r1 = Math.min(selectionStart.row, selectionEnd.row);
-            const c1 = Math.min(selectionStart.col, selectionEnd.col);
-            const vals: string[] = [];
-            for (let i = 0; i < 3; i++) {
-              vals.push(String(data[r1]?.[c1 + i] ?? ''));
-            }
-            setFormulaText(`=DATE(${vals.join(',')})`);
-          }} className={`${BTN} bg-green-500 hover:bg-green-600 text-white`}>DATE</button>
-        </TooltipCooldown>
-        <TooltipCooldown content="Inserta la fecha actual en la celda seleccionada" cooldown={1500}>
-          <button onClick={() => setFormulaText('=TODAY()')} className={`${BTN} bg-blue-500 hover:bg-blue-600 text-white`}>TODAY</button>
-        </TooltipCooldown>
-      </div>
+        <div className="flex gap-4 justify-center mb-4 w-full">
+          {/* SUM/SUMIF menú */}
+          <div className="relative">
+            <button onClick={() => setShowSumMenu((v) => !v)} className={`${BTN} bg-blue-600 hover:bg-blue-700 text-white`}>SUM ▼</button>
+            {showSumMenu && (
+              <div className="absolute left-0 mt-2 bg-white dark:bg-gray-800 rounded shadow-lg z-10 flex flex-col">
+                <button onClick={() => { applyQuickFunc('SUM'); setShowSumMenu(false); }} className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 text-left">SUM</button>
+                <button onClick={() => { setFormulaText('=SUMIF(A1:A10,">5")'); setShowSumMenu(false); }} className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 text-left">SUMIF</button>
+              </div>
+            )}
+          </div>
+          {/* COUNT/COUNTIF menú */}
+          <div className="relative">
+            <button onClick={() => setShowCountMenu((v) => !v)} className={`${BTN} bg-gray-600 hover:bg-gray-700 text-white`}>COUNT ▼</button>
+            {showCountMenu && (
+              <div className="absolute left-0 mt-2 bg-white dark:bg-gray-800 rounded shadow-lg z-10 flex flex-col">
+                <button onClick={() => { applyQuickFunc('COUNT'); setShowCountMenu(false); }} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 text-left">COUNT</button>
+                <button onClick={() => { setFormulaText('=COUNTIF(A1:A10,"<3")'); setShowCountMenu(false); }} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 text-left">COUNTIF</button>
+              </div>
+            )}
+          </div>
+          {/* Otros botones individuales */}
+          <TooltipCooldown content="Valor absoluto de la celda seleccionada" cooldown={1500}>
+            <button onClick={() => setFormulaText('=ABS(A1)')} className={`${BTN} bg-orange-500 hover:bg-orange-600 text-white`}>ABS</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Busca un valor en una columna y devuelve el relacionado de otra columna" cooldown={1500}>
+            <button onClick={() => setFormulaText('=VLOOKUP("valor",A1:B10,1)')} className={`${BTN} bg-teal-500 hover:bg-teal-600 text-white`}>VLOOKUP</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Evalúa si todas las condiciones son verdaderas" cooldown={1500}>
+            <button onClick={() => setFormulaText('=AND(true,false)')} className={`${BTN} bg-lime-500 hover:bg-lime-600 text-white`}>AND</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Evalúa si alguna condición es verdadera" cooldown={1500}>
+            <button onClick={() => setFormulaText('=OR(true,false)')} className={`${BTN} bg-yellow-500 hover:bg-yellow-600 text-white`}>OR</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Invierte el valor lógico" cooldown={1500}>
+            <button onClick={() => setFormulaText('=NOT(true)')} className={`${BTN} bg-pink-500 hover:bg-pink-600 text-white`}>NOT</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Elimina espacios extra de un texto" cooldown={1500}>
+            <button onClick={() => setFormulaText('=TRIM(A1)')} className={`${BTN} bg-gray-500 hover:bg-gray-600 text-white`}>TRIM</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Concatena los valores de la selección" cooldown={1500}>
+            <button onClick={() => applyQuickFunc('CONCAT')} className={`${BTN} bg-yellow-600 hover:bg-yellow-700 text-white`}>CONCAT</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Crea una fecha con año, mes y día (usa las 3 primeras celdas de la selección)" cooldown={1500}>
+            <button onClick={() => {
+              if (!selectionStart || !selectionEnd) return;
+              const r1 = Math.min(selectionStart.row, selectionEnd.row);
+              const c1 = Math.min(selectionStart.col, selectionEnd.col);
+              const vals: string[] = [];
+              for (let i = 0; i < 3; i++) {
+                vals.push(String(data[r1]?.[c1 + i] ?? ''));
+              }
+              setFormulaText(`=DATE(${vals.join(',')})`);
+            }} className={`${BTN} bg-green-500 hover:bg-green-600 text-white`}>DATE</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Inserta la fecha actual en la celda seleccionada" cooldown={1500}>
+            <button onClick={() => setFormulaText('=TODAY()')} className={`${BTN} bg-blue-500 hover:bg-blue-600 text-white`}>TODAY</button>
+          </TooltipCooldown>
+        </div>
       {/* Botones de combinar y separar celdas debajo de los controles principales */}
       <div className="flex gap-4 justify-center mb-4 w-full">
         <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
