@@ -44,6 +44,8 @@ const ExcelComponent: React.FC = () => {
       }
     } catch (e) { /* ignore */ }
   }, [darkMode]);
+  // Clase común para botones (alineación/altura consistente)
+  const BTN = 'inline-flex items-center justify-center h-9 px-3 rounded text-sm leading-none align-middle font-medium';
   const [data, setData] = useState<string[][]>(createInitialData(INITIAL_ROWS, INITIAL_COLS));
   const [selected, setSelected] = useState<{ row: number; col: number } | null>({ row: 0, col: 0 });
   // Para selección múltiple
@@ -707,21 +709,59 @@ const ExcelComponent: React.FC = () => {
   };
 
   const combineCells = () => {
-    // Determinar la región a combinar: preferimos la selección principal
+    // Determinar la región a combinar.
+    // Si hay extraSelections priorizarlas (usuario hizo Ctrl+click). Requerimos que formen
+    // un rectángulo contiguo para evitar borrar celdas no seleccionadas.
     let r1: number, r2: number, c1: number, c2: number;
-    if (selectionStart && selectionEnd) {
-      r1 = Math.min(selectionStart.row, selectionEnd.row);
-      r2 = Math.max(selectionStart.row, selectionEnd.row);
-      c1 = Math.min(selectionStart.col, selectionEnd.col);
-      c2 = Math.max(selectionStart.col, selectionEnd.col);
-    } else if (extraSelections && extraSelections.length) {
-      // si no hay selección principal, usar bounding box de extraSelections
+    if (extraSelections && extraSelections.length) {
       r1 = Math.min(...extraSelections.map(s => s.r1));
       r2 = Math.max(...extraSelections.map(s => s.r2));
       c1 = Math.min(...extraSelections.map(s => s.c1));
       c2 = Math.max(...extraSelections.map(s => s.c2));
+      // comprobar contigüidad: todos los cells dentro del bbox deben estar presentes en extraSelections
+      const expected = (r2 - r1 + 1) * (c2 - c1 + 1);
+      const present = new Set<string>();
+      for (const s of extraSelections) {
+        for (let rr = s.r1; rr <= s.r2; rr++) {
+          for (let cc = s.c1; cc <= s.c2; cc++) {
+            present.add(`${rr},${cc}`);
+          }
+        }
+      }
+      if (present.size !== expected) {
+        showToast('Selección no contigua: combina solo rangos rectangulares (usa Shift para seleccionar).');
+        return;
+      }
+    } else if (selectionStart && selectionEnd) {
+      r1 = Math.min(selectionStart.row, selectionEnd.row);
+      r2 = Math.max(selectionStart.row, selectionEnd.row);
+      c1 = Math.min(selectionStart.col, selectionEnd.col);
+      c2 = Math.max(selectionStart.col, selectionEnd.col);
     } else {
       return;
+    }
+    // Expand selection to fully include any existing merges that partially intersect
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const m of merges) {
+        const mr1 = m.r;
+        const mr2 = m.r + m.rows - 1;
+        const mc1 = m.c;
+        const mc2 = m.c + m.cols - 1;
+        // if merge intersects selection (not completely outside)
+        const intersects = !(mr2 < r1 || mr1 > r2 || mc2 < c1 || mc1 > c2);
+        if (intersects) {
+          const nr1 = Math.min(r1, mr1);
+          const nr2 = Math.max(r2, mr2);
+          const nc1 = Math.min(c1, mc1);
+          const nc2 = Math.max(c2, mc2);
+          if (nr1 !== r1 || nr2 !== r2 || nc1 !== c1 || nc2 !== c2) {
+            r1 = nr1; r2 = nr2; c1 = nc1; c2 = nc2;
+            changed = true;
+          }
+        }
+      }
     }
     const rows = r2 - r1 + 1;
     const cols = c2 - c1 + 1;
@@ -764,11 +804,11 @@ const ExcelComponent: React.FC = () => {
       const r2 = Math.max(selectionStart.row, selectionEnd.row);
       const c1 = Math.min(selectionStart.col, selectionEnd.col);
       const c2 = Math.max(selectionStart.col, selectionEnd.col);
-  setMerges(prev => prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2)));
-  setSelectionStart(null);
-  setSelectionEnd(null);
-  setExtraSelections([]);
-  showToast('Celdas separadas');
+      setMerges(prev => prev.filter(m => (m.r + m.rows - 1 < r1) || (m.r > r2) || (m.c + m.cols - 1 < c1) || (m.c > c2)));
+      setSelectionStart(null);
+      setSelectionEnd(null);
+      setExtraSelections([]);
+      showToast('Celdas separadas');
       return;
     }
     // Si hay extraSelections, separar merges que intersecten cualquiera de ellas
@@ -1311,12 +1351,12 @@ const ExcelComponent: React.FC = () => {
         <div className="flex items-center justify-between mb-3 gap-3">
     <div className="flex items-center gap-2">
             <TooltipCooldown content="Agrega una nueva fila al final de la tabla" cooldown={1500}>
-              <button onClick={addRow} className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition text-sm">+ Fila</button>
+              <button onClick={addRow} className={`${BTN} bg-blue-600 text-white hover:bg-blue-700 transition`}>+ Fila</button>
             </TooltipCooldown>
             <TooltipCooldown content="Elimina la fila seleccionada" cooldown={1500}>
-              <button onClick={deleteRow} className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition text-sm flex items-center"><FaTrash className="mr-1" />Fila</button>
+              <button onClick={deleteRow} className={`${BTN} bg-red-600 text-white hover:bg-red-700 transition`}><FaTrash className="align-middle mr-2 text-sm" />Fila</button>
             </TooltipCooldown>
-            <select value={selectedRow} onChange={e => setSelectedRow(Number(e.target.value))} className="px-2 py-1 rounded border text-sm bg-white dark:bg-gray-700 dark:text-gray-100">
+            <select value={selectedRow} onChange={e => setSelectedRow(Number(e.target.value))} className="px-2 h-9 rounded border text-sm bg-white dark:bg-gray-700 dark:text-gray-100">
               {data.map((_, idx) => (
                 <option key={idx} value={idx}>{`Fila ${idx + 1}`}</option>
               ))}
@@ -1325,32 +1365,27 @@ const ExcelComponent: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <TooltipCooldown content="Agrega una nueva columna al final de la tabla" cooldown={1500}>
-              <button onClick={addCol} className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition text-sm">+ Col</button>
+              <button onClick={addCol} className={`${BTN} bg-green-600 text-white hover:bg-green-700 transition`}>+ Col</button>
             </TooltipCooldown>
             <TooltipCooldown content="Elimina la columna seleccionada" cooldown={1500}>
-              <button onClick={deleteCol} className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition text-sm flex items-center"><FaTrash className="mr-1" />Col</button>
+              <button onClick={deleteCol} className={`${BTN} bg-red-600 text-white hover:bg-red-700 transition`}><FaTrash className="align-middle mr-2 text-sm" />Col</button>
             </TooltipCooldown>
-            <select value={selectedCol} onChange={e => setSelectedCol(Number(e.target.value))} className="px-2 py-1 rounded border text-sm bg-white dark:bg-gray-700 dark:text-gray-100">
+            <select value={selectedCol} onChange={e => setSelectedCol(Number(e.target.value))} className="px-2 h-9 rounded border text-sm bg-white dark:bg-gray-700 dark:text-gray-100">
               {data[0].map((_, idx) => (
                 <option key={idx} value={idx}>{getColName(idx)}</option>
               ))}
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <TooltipCooldown content="Importa datos desde un archivo Excel (.xlsx, .xls, .csv)" cooldown={1500}>
-              <button onClick={() => fileInputRef.current?.click()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-5 py-2 rounded-lg text-base shadow-md border border-yellow-700">Importar Excel</button>
+            <TooltipCooldown content="Importa datos desde un archivo Excel (.xlsx, .xls,.csv)" cooldown={1500}>
+              <button onClick={() => fileInputRef.current?.click()} className={`${BTN} bg-yellow-500 hover:bg-yellow-600 text-black font-bold shadow-md border border-yellow-700`}>Importar Excel</button>
             </TooltipCooldown>
             <TooltipCooldown content="Exporta la tabla actual a un archivo Excel (.xlsx)" cooldown={1500}>
-              <button onClick={exportToExcel} className="bg-blue-500 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-base shadow-md border border-blue-800">Exportar Excel</button>
+              <button onClick={exportToExcel} className={`${BTN} bg-blue-500 hover:bg-blue-700 text-white font-bold shadow-md border border-blue-800`}>Exportar Excel</button>
             </TooltipCooldown>
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={onFileInputChange} className="hidden" />
             <TooltipCooldown content="Limpia las celdas seleccionadas o toda la hoja si no hay selección" cooldown={1500}>
-              <button
-                onClick={() => clearSelectedOrAll()}
-                className="bg-gray-800 hover:bg-gray-900 text-white font-bold px-5 py-2 rounded-lg text-base shadow-md border border-gray-900"
-              >
-                Clean
-              </button>
+              <button onClick={() => clearSelectedOrAll()} className={`${BTN} bg-gray-800 hover:bg-gray-900 text-white font-bold shadow-md border border-gray-900`}>Clean</button>
             </TooltipCooldown>
           </div>
           <div className="absolute right-12 top-16 z-10">
@@ -1370,68 +1405,68 @@ const ExcelComponent: React.FC = () => {
           <div className="flex items-center gap-3 mb-3">
             <div className="flex items-center gap-2">
               <TooltipCooldown content="Copia el rango seleccionado (Ctrl+C)" cooldown={1500}>
-                <button onClick={() => copySelectionToClipboard()} title="Copy (Ctrl+C)" className="w-9 h-8 bg-gray-200 dark:bg-gray-600 rounded text-sm flex items-center justify-center">
-                  <FaCopy className="text-[14px] text-gray-800 dark:text-gray-100" />
+                <button onClick={() => copySelectionToClipboard()} title="Copy (Ctrl+C)" className={`${BTN} w-9 px-0 bg-gray-200 dark:bg-gray-600`}>
+                  <FaCopy className="text-sm text-gray-800 dark:text-gray-100 align-middle" />
                 </button>
               </TooltipCooldown>
               <TooltipCooldown content="Pega en la celda activa (Ctrl+V)" cooldown={1500}>
-                <button onClick={() => pasteClipboardAtSelection()} title="Paste (Ctrl+V)" className="w-9 h-8 bg-gray-200 dark:bg-gray-600 rounded text-sm flex items-center justify-center">
-                  <FaPaste className="text-[14px] text-gray-800 dark:text-gray-100" />
+                <button onClick={() => pasteClipboardAtSelection()} title="Paste (Ctrl+V)" className={`${BTN} w-9 px-0 bg-gray-200 dark:bg-gray-600`}>
+                  <FaPaste className="text-sm text-gray-800 dark:text-gray-100 align-middle" />
                 </button>
               </TooltipCooldown>
               <TooltipCooldown content="Pega transpuesto (Ctrl+Shift+V)" cooldown={1500}>
-                <button onClick={() => pasteTransposedAtSelection()} title="Paste Transpose (Ctrl+Shift+V)" className="w-9 h-8 bg-gray-200 dark:bg-gray-600 rounded text-sm flex items-center justify-center">
-                  <FaExchangeAlt className="text-[14px] text-gray-800 dark:text-gray-100" />
+                <button onClick={() => pasteTransposedAtSelection()} title="Paste Transpose (Ctrl+Shift+V)" className={`${BTN} w-9 px-0 bg-gray-200 dark:bg-gray-600`}>
+                  <FaExchangeAlt className="text-sm text-gray-800 dark:text-gray-100 align-middle" />
                 </button>
               </TooltipCooldown>
               <TooltipCooldown content="Deshace la última acción (Ctrl+Z)" cooldown={1500}>
-                <button onClick={() => { undo(); }} disabled={!history.length} className={"px-2 py-1 rounded text-sm " + (darkMode ? "bg-amber-400 text-gray-900 border border-amber-400 hover:bg-amber-500" : "bg-amber-300 text-gray-800 border border-amber-300 hover:bg-amber-400")}>Undo</button>
+                <button onClick={() => { undo(); }} disabled={!history.length} className={`${BTN} ${darkMode ? 'bg-amber-400 text-gray-900 border border-amber-400 hover:bg-amber-500' : 'bg-amber-300 text-gray-800 border border-amber-300 hover:bg-amber-400'}`}>Undo</button>
               </TooltipCooldown>
               <TooltipCooldown content="Rehace la última acción deshecha (Ctrl+Y)" cooldown={1500}>
-                <button onClick={() => { redo(); }} disabled={!future.length} className={"px-2 py-1 rounded text-sm " + (darkMode ? "bg-amber-400 text-gray-900 border border-amber-400 hover:bg-amber-500" : "bg-amber-300 text-gray-800 border border-amber-300 hover:bg-amber-400")}>Redo</button>
+                <button onClick={() => { redo(); }} disabled={!future.length} className={`${BTN} ${darkMode ? 'bg-amber-400 text-gray-900 border border-amber-400 hover:bg-amber-500' : 'bg-amber-300 text-gray-800 border border-amber-300 hover:bg-amber-400'}`}>Redo</button>
               </TooltipCooldown>
             </div>
 
             <div className="flex items-center gap-2 p-2 border rounded bg-white dark:bg-gray-800">
-                <input placeholder="Buscar" value={findText} onChange={e=>setFindText(e.target.value)} className="px-2 py-1 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
-                <input placeholder="Reemplazar" value={replaceText} onChange={e=>setReplaceText(e.target.value)} className="px-2 py-1 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
+                <input placeholder="Buscar" value={findText} onChange={e=>setFindText(e.target.value)} className="px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
+                <input placeholder="Reemplazar" value={replaceText} onChange={e=>setReplaceText(e.target.value)} className="px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
               <TooltipCooldown content="Busca el texto en la hoja" cooldown={1500}>
-                <button onClick={() => { findMatches(); }} className="px-2 py-1 bg-blue-500 text-white rounded text-sm">Find</button>
+                <button onClick={() => { findMatches(); }} className={`${BTN} bg-blue-500 text-white`}>Find</button>
               </TooltipCooldown>
               <TooltipCooldown content="Reemplaza la coincidencia actual por el texto indicado" cooldown={1500}>
-                <button onClick={() => replaceCurrent()} className="px-2 py-1 bg-yellow-400 text-black rounded text-sm">Replace</button>
+                <button onClick={() => replaceCurrent()} className={`${BTN} bg-yellow-400 text-black`}>Replace</button>
               </TooltipCooldown>
               <TooltipCooldown content="Reemplaza todas las coincidencias por el texto indicado" cooldown={1500}>
-                <button onClick={() => replaceAll()} className="px-2 py-1 bg-red-400 text-white rounded text-sm">Replace All</button>
+                <button onClick={() => replaceAll()} className={`${BTN} bg-red-400 text-white`}>Replace All</button>
               </TooltipCooldown>
             </div>
 
             <div className="flex items-center gap-2">
               <label className="text-sm">Freeze R:</label>
-                <input type="number" value={freezeRows} onChange={e=>setFreezeRows(Number(e.target.value)||0)} className="w-16 px-2 py-1 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
+                <input type="number" value={freezeRows} onChange={e=>setFreezeRows(Number(e.target.value)||0)} className="w-16 px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
                 <label className="text-sm">C:</label>
-                <input type="number" value={freezeCols} onChange={e=>setFreezeCols(Number(e.target.value)||0)} className="w-16 px-2 py-1 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
+                <input type="number" value={freezeCols} onChange={e=>setFreezeCols(Number(e.target.value)||0)} className="w-16 px-2 h-9 border rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" />
             </div>
 
             <div className="flex items-center gap-2">
               <TooltipCooldown content="Ordena el rango seleccionado por la columna actual" cooldown={1500}>
-                <button onClick={() => { setShowSortModal(true); setSortColInput(getColName(selectionStart?.col ?? 0)); }} className="px-2 py-1 bg-indigo-500 text-white rounded text-sm">Sort Range</button>
+                <button onClick={() => { setShowSortModal(true); setSortColInput(getColName(selectionStart?.col ?? 0)); }} className={`${BTN} bg-indigo-500 text-white`}>Sort Range</button>
               </TooltipCooldown>
             </div>
 
             <div className="flex items-center gap-2">
               <TooltipCooldown content="Agrega formato condicional al rango seleccionado" cooldown={1500}>
-                <button onClick={() => { setShowCFModal(true); setCfTypeInput('gt'); setCfValueInput('0'); setCfColorInput('#fffbcc'); }} className="px-2 py-1 bg-pink-500 text-white rounded text-sm">Add Conditional Format</button>
+                <button onClick={() => { setShowCFModal(true); setCfTypeInput('gt'); setCfValueInput('0'); setCfColorInput('#fffbcc'); }} className={`${BTN} bg-pink-500 text-white`}>Add Conditional Format</button>
               </TooltipCooldown>
             </div>
           </div>
 
         <div className="flex gap-2 mb-4">
           <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
-            <button onClick={combineCells} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">Combinar celdas</button>
+            <button onClick={combineCells} className={`${BTN} bg-purple-600 hover:bg-purple-700 text-white`}>Combinar celdas</button>
           </TooltipCooldown>
           <TooltipCooldown content="Separa las celdas combinadas seleccionadas" cooldown={1500}>
-            <button onClick={separateCells} className="bg-pink-600 hover:bg-pink-700 text-white px-3 py-1 rounded text-sm">Separar celdas</button>
+            <button onClick={separateCells} className={`${BTN} bg-pink-600 hover:bg-pink-700 text-white`}>Separar celdas</button>
           </TooltipCooldown>
         </div>
 
@@ -1446,10 +1481,10 @@ const ExcelComponent: React.FC = () => {
           />
           <div className="flex items-center gap-2">
             <TooltipCooldown content="Aplica la fórmula escrita a la selección (V)" cooldown={1500}>
-              <button onClick={applyFormulaToSelection} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded font-semibold">V</button>
+              <button onClick={applyFormulaToSelection} className={`${BTN} w-9 px-0 bg-green-600 hover:bg-green-700 text-white`}>V</button>
             </TooltipCooldown>
             <TooltipCooldown content="Limpia la fórmula y la selección (X)" cooldown={1500}>
-              <button onClick={clearFormulaAndSelection} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded font-semibold">X</button>
+              <button onClick={clearFormulaAndSelection} className={`${BTN} w-9 px-0 bg-red-600 hover:bg-red-700 text-white`}>X</button>
             </TooltipCooldown>
           </div>
           <div className="ml-4 text-sm text-gray-700">
@@ -1457,13 +1492,13 @@ const ExcelComponent: React.FC = () => {
           </div>
           <div className="ml-4 flex items-center gap-2">
             <TooltipCooldown content="Suma los valores de la selección" cooldown={1500}>
-              <button onClick={() => applyQuickFunc('SUM')} className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-sm">SUM</button>
+              <button onClick={() => applyQuickFunc('SUM')} className={`${BTN} bg-blue-600 hover:bg-blue-700 text-white`}>SUM</button>
             </TooltipCooldown>
             <TooltipCooldown content="Calcula el promedio de la selección" cooldown={1500}>
-              <button onClick={() => applyQuickFunc('AVERAGE')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-sm">AVERAGE</button>
+              <button onClick={() => applyQuickFunc('AVERAGE')} className={`${BTN} bg-indigo-600 hover:bg-indigo-700 text-white`}>AVERAGE</button>
             </TooltipCooldown>
             <TooltipCooldown content="Cuenta las celdas con valor en la selección" cooldown={1500}>
-              <button onClick={() => applyQuickFunc('COUNT')} className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded text-sm">COUNT</button>
+              <button onClick={() => applyQuickFunc('COUNT')} className={`${BTN} bg-gray-600 hover:bg-gray-700 text-white`}>COUNT</button>
             </TooltipCooldown>
           </div>
         </div>
@@ -1472,7 +1507,7 @@ const ExcelComponent: React.FC = () => {
           <table ref={tableRef} className="min-w-[1200px] w-full table-fixed" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead className="sticky top-0 bg-gray-100 dark:bg-gray-700">
               <tr>
-                <th className="bg-gray-100 text-gray-700 border-r border-gray-200 w-10">&nbsp;</th>
+                <th className="bg-gray-100 text-gray-700 border-r border-gray-200 w-10 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">&nbsp;</th>
                 {Array.from({ length: data[0].length }).map((_, colIdx) => (
                   <th key={colIdx} data-header-col={colIdx} className="bg-gray-100 text-gray-700 text-center font-medium border-b border-gray-200 relative dark:bg-gray-700 dark:text-gray-200" style={{ width: colWidths[colIdx], height: 36 }}
                     onMouseDown={e => {
@@ -1621,12 +1656,12 @@ const ExcelComponent: React.FC = () => {
           <h3 className="font-bold mb-2">Sort Range</h3>
           <div className="mb-2">
             <label className="block text-xs">Columna (ej: A)</label>
-            <input value={sortColInput} onChange={e=>setSortColInput(e.target.value)} className="w-full px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
+            <input value={sortColInput} onChange={e=>setSortColInput(e.target.value)} className="w-full px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
           </div>
           <div className="mb-3">
             <label className="block text-xs">Dirección</label>
             <div className="relative group">
-              <select value={sortDirection} onChange={e=>setSortDirection(e.target.value as any)} className="w-full pr-8 px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+              <select value={sortDirection} onChange={e=>setSortDirection(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
                 <option value="asc">Ascendente</option>
                 <option value="desc">Descendente</option>
               </select>
@@ -1638,8 +1673,8 @@ const ExcelComponent: React.FC = () => {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <button onClick={()=>setShowSortModal(false)} className="px-3 py-1 border rounded">Cancelar</button>
-            <button onClick={()=>{ const ci = colNameToIndex(sortColInput); setShowSortModal(false); sortRangeByColumn(ci, sortDirection); }} className="px-3 py-1 bg-indigo-600 text-white rounded">Aplicar</button>
+            <button onClick={()=>setShowSortModal(false)} className={`${BTN} border`}>Cancelar</button>
+            <button onClick={()=>{ const ci = colNameToIndex(sortColInput); setShowSortModal(false); sortRangeByColumn(ci, sortDirection); }} className={`${BTN} bg-indigo-600 text-white`}>Aplicar</button>
           </div>
         </div>
       </div>
@@ -1652,7 +1687,7 @@ const ExcelComponent: React.FC = () => {
           <div className="mb-2">
             <label className="block text-xs">Tipo</label>
             <div className="relative group">
-              <select value={cfTypeInput} onChange={e=>setCfTypeInput(e.target.value as any)} className="w-full pr-8 px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+              <select value={cfTypeInput} onChange={e=>setCfTypeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
                 <option value="gt">Greater than (gt)</option>
                 <option value="lt">Less than (lt)</option>
                 <option value="eq">Equals (eq)</option>
@@ -1667,12 +1702,12 @@ const ExcelComponent: React.FC = () => {
           </div>
           <div className="mb-2">
             <label className="block text-xs">Valor</label>
-            <input value={cfValueInput} onChange={e=>setCfValueInput(e.target.value)} className="w-full px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
+            <input value={cfValueInput} onChange={e=>setCfValueInput(e.target.value)} className="w-full px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
           </div>
           <div className="mb-2">
             <label className="block text-xs">Scope</label>
             <div className="relative group">
-              <select value={cfScopeInput} onChange={e=>setCfScopeInput(e.target.value as any)} className="w-full pr-8 px-2 py-1 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+              <select value={cfScopeInput} onChange={e=>setCfScopeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
                 <option value="selection">Selección actual</option>
                 <option value="sheet">Toda la hoja</option>
               </select>
@@ -1685,18 +1720,18 @@ const ExcelComponent: React.FC = () => {
           </div>
           <div className="mb-3">
             <label className="block text-xs">Color de fondo</label>
-            <input type="color" value={cfColorInput} onChange={e=>setCfColorInput(e.target.value)} className="w-full h-8 p-1 border rounded" />
+            <input type="color" value={cfColorInput} onChange={e=>setCfColorInput(e.target.value)} className="w-full h-9 p-1 border rounded" />
           </div>
           <div className="flex justify-end gap-2">
-            <button onClick={()=>setShowCFModal(false)} className="px-3 py-1 border rounded">Cancelar</button>
+            <button onClick={()=>setShowCFModal(false)} className={`${BTN} border`}>Cancelar</button>
             <button
               onClick={()=>{ setShowCFModal(false); addConditionalFormat(cfTypeInput, cfValueInput, cfColorInput, cfScopeInput); }}
               disabled={cfScopeInput === 'selection' && !(selectionStart && selectionEnd)}
               title={cfScopeInput === 'selection' && !(selectionStart && selectionEnd) ? 'Selecciona un rango antes de añadir formato condicional' : 'Añadir formato condicional'}
               className={
                 (cfScopeInput === 'selection' && !(selectionStart && selectionEnd))
-                ? 'px-3 py-1 bg-pink-300 text-white rounded opacity-60 cursor-not-allowed'
-                : 'px-3 py-1 bg-pink-600 text-white rounded'
+                ? `${BTN} bg-pink-300 text-white opacity-60 cursor-not-allowed`
+                : `${BTN} bg-pink-600 text-white`
               }
             >Añadir</button>
           </div>
@@ -1705,7 +1740,7 @@ const ExcelComponent: React.FC = () => {
     )}
 
     {toastMsg && (
-      <div className="fixed right-4 bottom-6 z-60 bg-black text-white px-3 py-2 rounded shadow">{toastMsg}</div>
+      <div className="fixed right-4 bottom-6 z-60 bg-black text-white h-9 px-3 flex items-center rounded shadow">{toastMsg}</div>
     )}
 
       </div>

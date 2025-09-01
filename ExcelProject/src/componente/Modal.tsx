@@ -32,7 +32,7 @@ const Modal: React.FC<ModalProps> = ({ title, children, onClose }) => {
           {children}
         </div>
         <div className="flex justify-end mt-3">
-          <button onClick={onClose} className="px-3 py-1 border rounded">Cerrar</button>
+          <button onClick={onClose} className={`inline-flex items-center h-9 px-3 rounded text-sm border`}>Cerrar</button>
         </div>
       </div>
     </div>
