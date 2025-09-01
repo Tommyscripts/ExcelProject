@@ -3,6 +3,7 @@ import TooltipCooldown from './Auxiliares/TooltipCooldown';
 import { FaTrash, FaCopy, FaPaste, FaExchangeAlt } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import Cell from './Cell';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 const INITIAL_COLS = 22; // A-V
 const INITIAL_ROWS = 46;
@@ -80,6 +81,11 @@ const ExcelComponent: React.FC = () => {
   }, []);
   // Merges: regiones combinadas
   const [merges, setMerges] = useState<Array<{ r: number; c: number; rows: number; cols: number }>>([]);
+
+  // Helper: devuelve el merge que cubre (row,col) si existe
+  const getCoveringMerge = useCallback((row: number, col: number) => {
+    return merges.find(m => row >= m.r && row < m.r + m.rows && col >= m.c && col < m.c + m.cols) ?? null;
+  }, [merges]);
 
   // --- Historial para Undo/Redo ---
   const HISTORY_LIMIT = 50;
@@ -229,36 +235,8 @@ const ExcelComponent: React.FC = () => {
 
   // --- Sort Range ---
   const sortSelectionByColumn = () => {
-    if (!selectionStart || !selectionEnd) return;
-    const r1 = Math.min(selectionStart.row, selectionEnd.row);
-    const r2 = Math.max(selectionStart.row, selectionEnd.row);
-    const c1 = Math.min(selectionStart.col, selectionEnd.col);
-    const c2 = Math.max(selectionStart.col, selectionEnd.col);
-    const colLetter = window.prompt('Columna para ordenar (ej: A, B, ... relative a hoja):', getColName(c1));
-    if (!colLetter) return;
-    const colIdx = colNameToIndex(colLetter);
-    if (colIdx < c1 || colIdx > c2) {
-      alert('La columna debe estar dentro de la selección.');
-      return;
-    }
-    const dir = window.prompt('Dirección: asc o desc', 'asc') || 'asc';
-    pushHistory();
-    setData(prev => {
-      const next = prev.map(r => [...r]);
-      const slice = next.slice(r1, r2 + 1);
-      slice.sort((a, b) => {
-        const va = a[colIdx] ?? '';
-        const vb = b[colIdx] ?? '';
-        const na = Number(String(va).replace(/,/g, ''));
-        const nb = Number(String(vb).replace(/,/g, ''));
-        if (!Number.isNaN(na) && !Number.isNaN(nb)) return dir === 'asc' ? na - nb : nb - na;
-        const sa = String(va);
-        const sb = String(vb);
-        return dir === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
-      });
-      for (let i = r1; i <= r2; i++) next[i] = slice[i - r1];
-      return next;
-    });
+  // Sorting is handled via the Sort modal (showSortModal) which calls sortRangeByColumn
+  return;
   };
 
   // --- Conditional Formatting (simple) ---
@@ -313,14 +291,7 @@ const ExcelComponent: React.FC = () => {
     if (skipFirstSave.current) { skipFirstSave.current = false; return; }
     saveToLocal();
   }, [saveToLocal]);
-  const addConditionalFormatViaPrompt = () => {
-    const type = window.prompt('Tipo de regla: gt, lt, eq, contains', 'gt') as any;
-    if (!type) return;
-    const value = window.prompt('Valor (para contains escribe texto)', '0') || '0';
-    const bg = window.prompt('Color de fondo (css)', '#fffbcc') || '#fffbcc';
-    const id = String(Date.now());
-    setConditionalFormats(prev => [...prev, { id, type, value, bg, color: undefined, scope: null }]);
-  };
+  // Replaced by the CF modal UI (showCFModal)
 
   // --- Mejoras UX: modales para Sort y Conditional Format + toast ---
   const [showSortModal, setShowSortModal] = useState(false);
@@ -657,11 +628,14 @@ const ExcelComponent: React.FC = () => {
     setSelected({ row, col });
   }, [extraSelections, selectionStart, selectionEnd, selected]);
 
+
   const handleCellMouseDown = useCallback((row: number, col: number) => {
     // Iniciar posible selección por mousedown.
     // Si Shift está presionado y hay una celda previamente seleccionada, usarla como ancla.
     // Si no, anclar la selección a la celda clicada para evitar rangos accidentales.
-    isMouseDown.current = true;
+  // reset drag flag at start of a new mousedown
+  hadDragSinceMouseDown.current = false;
+  isMouseDown.current = true;
     // no activamos isDragging hasta que el usuario mueva el mouse
     setIsDragging(false);
     if (shiftPressed.current && selected) {
@@ -674,17 +648,25 @@ const ExcelComponent: React.FC = () => {
   }, [selected]);
 
   const handleCellMouseEnter = useCallback((row: number, col: number) => {
-    if (selectionStart) setSelectionEnd({ row, col });
-    // Si el usuario mantiene pulsado el ratón y mueve sobre otras celdas,
-    // marcamos que hubo un arrastre para que el click posterior no lo reinterprete.
-    if (isMouseDown.current) {
-      hadDragSinceMouseDown.current = true;
+    // Solo actualizar la selección por hover si estamos arrastrando con el mouse (mousedown)
+    if (!isMouseDown.current) return;
+    // Si la celda pertenece a un merge, hacer snap al bloque completo
+    const covering = getCoveringMerge(row, col);
+    if (covering) {
+      setSelectionEnd({ row: covering.r + covering.rows - 1, col: covering.c + covering.cols - 1 });
+      setSelectionStart({ row: covering.r, col: covering.c });
+    } else if (selectionStart) {
+      setSelectionEnd({ row, col });
     }
+    // marcar drag solo cuando hay movimiento real (señal simple: selectionEnd distinta de selectionStart)
+    hadDragSinceMouseDown.current = true;
   }, [selectionStart]);
 
   const handleCellMouseUp = useCallback(() => {
     // No limpiamos selectionStart aquí para que la selección persista después de soltar.
-    isMouseDown.current = false;
+  isMouseDown.current = false;
+  // reset drag flag when mouse is released
+  hadDragSinceMouseDown.current = false;
     setIsDragging(false);
   }, []);
 
@@ -700,6 +682,7 @@ const ExcelComponent: React.FC = () => {
         isMouseDown.current = false;
       }
       setIsDragging(false);
+  hadDragSinceMouseDown.current = false;
     };
     window.addEventListener('mouseup', onUp);
     return () => window.removeEventListener('mouseup', onUp);
@@ -839,12 +822,20 @@ const ExcelComponent: React.FC = () => {
   // Import / Export Excel
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const tableRef = useRef<HTMLTableElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: data.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 36,
+    overscan: 10,
+  });
 
   // Mientras se arrastra, hacemos seguimiento del elemento bajo el cursor y actualizamos selectionEnd por celda
   React.useEffect(() => {
     // Usar coordenadas relativas a la tabla y `colWidths` para calcular fila/col
     const onMove = (e: MouseEvent) => {
-      if (!isMouseDown.current || !shiftPressed.current) return;
+  if (!isMouseDown.current || !shiftPressed.current) return;
       const table = tableRef.current;
       if (!table) return;
       const rect = table.getBoundingClientRect();
@@ -878,7 +869,16 @@ const ExcelComponent: React.FC = () => {
       if (row < 0) row = 0;
       if (row >= data.length) row = data.length - 1;
 
-      setSelectionEnd({ row, col });
+      // si la celda pertenece a un merge, snap a su bounding box
+      const covering = merges.find(m => row >= m.r && row < m.r + m.rows && col >= m.c && col < m.c + m.cols);
+      if (covering) {
+        setSelectionStart({ row: covering.r, col: covering.c });
+        setSelectionEnd({ row: covering.r + covering.rows - 1, col: covering.c + covering.cols - 1 });
+      } else {
+        setSelectionEnd({ row, col });
+      }
+      // marcar drag
+      hadDragSinceMouseDown.current = true;
     };
     window.addEventListener('mousemove', onMove);
     return () => window.removeEventListener('mousemove', onMove);
@@ -906,7 +906,7 @@ const ExcelComponent: React.FC = () => {
       if (headerDragging.current) {
         headerDragging.current = false;
         headerDragStart.current = null;
-        hadDragSinceMouseDown.current = true;
+  hadDragSinceMouseDown.current = false;
       }
     };
     window.addEventListener('mousemove', onMoveHeader);
@@ -1556,11 +1556,11 @@ const ExcelComponent: React.FC = () => {
                       // si no es la celda inicial del merge, omitimos el render (queda cubierta)
                       if (covering.r !== rowIdx || covering.c !== colIdx) return null;
                       // si es la celda inicial, renderizamos con rowSpan/colSpan
-            const isMultiSelected = isCellInSelections(rowIdx, colIdx) || isCellInSelections(covering.r + covering.rows - 1, covering.c + covering.cols - 1);
+                      const isMultiSelected = isCellInSelections(rowIdx, colIdx) || isCellInSelections(covering.r + covering.rows - 1, covering.c + covering.cols - 1);
                       // calcular ancho como suma de anchos de las columnas cubiertas
                       const spanWidth = colWidths.slice(colIdx, colIdx + covering.cols).reduce((a, b) => a + (b ?? 96), 0);
-            const cs = computeCellStyles(rowIdx, colIdx);
-            return (
+                      const cs = computeCellStyles(rowIdx, colIdx);
+                      return (
                         <Cell
                           key={colIdx}
                           value={cell}
@@ -1578,16 +1578,16 @@ const ExcelComponent: React.FC = () => {
                           onMouseEnter={onCellMouseEnter}
                           onMouseUp={onCellMouseUp}
                           onClick={onCellClick}
-              extraStyle={cs.style}
-              extraClass={cs.cls}
+                          extraStyle={cs.style}
+                          extraClass={cs.cls}
                         />
                       );
                     }
 
                     const isSelected = selected && selected.row === rowIdx && selected.col === colIdx;
                     const isMultiSelected = isCellInSelections(rowIdx, colIdx);
-          const cs = computeCellStyles(rowIdx, colIdx);
-          return (
+                    const cs = computeCellStyles(rowIdx, colIdx);
+                    return (
                       <Cell
                         key={colIdx}
                         value={cell}
@@ -1603,8 +1603,8 @@ const ExcelComponent: React.FC = () => {
                         onMouseEnter={onCellMouseEnter}
                         onMouseUp={onCellMouseUp}
                         onClick={onCellClick}
-            extraStyle={cs.style}
-            extraClass={cs.cls}
+                        extraStyle={cs.style}
+                        extraClass={cs.cls}
                       />
                     );
                   })}
