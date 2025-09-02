@@ -106,8 +106,8 @@ export const Toolbar: React.FC<any> = ({
     </div>
     {/* Secciones principales */}
     <div className="flex flex-wrap gap-6">
-      {/* Filas/Columnas */}
-      <div className="bg-blue-500/90 rounded-xl p-6 min-w-[220px] flex flex-col gap-3 text-white shadow-lg">
+  {/* Filas/Columnas */}
+  <div className="bg-blue-500/90 rounded-xl p-6 w-64 flex flex-col gap-3 text-white shadow-lg items-center">
         <div className="text-lg font-bold mb-2">Filas/Columnas</div>
           <TooltipCooldown content="Añade una nueva fila debajo" cooldown={1500}>
             <button onClick={addRow} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-400 hover:bg-blue-600 font-semibold"><span>➕</span>Insertar fila</button>
@@ -121,9 +121,15 @@ export const Toolbar: React.FC<any> = ({
           <TooltipCooldown content="Elimina la columna seleccionada" cooldown={1500}>
             <button onClick={deleteCol} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-700 font-semibold"><span>🗑️</span>Eliminar columna</button>
           </TooltipCooldown>
+          <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
+            <button onClick={combineCells} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500 hover:bg-purple-700 font-semibold"><span>🔗</span>Combinar celdas</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Separa las celdas combinadas seleccionadas" cooldown={1500}>
+            <button onClick={separateCells} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-400 hover:bg-purple-600 font-semibold"><span>✂️</span>Separar celdas</button>
+          </TooltipCooldown>
       </div>
       {/* Funciones */}
-      <div className="bg-orange-500/90 rounded-xl p-6 min-w-[220px] flex flex-col gap-3 text-white shadow-lg">
+  <div className="bg-orange-500/90 rounded-xl p-6 w-64 flex flex-col gap-3 text-white shadow-lg items-center">
         <div className="text-lg font-bold mb-2">Funciones</div>
         {/* SUM y SUMIF */}
         <div className="relative inline-block">
@@ -162,19 +168,28 @@ export const Toolbar: React.FC<any> = ({
         </TooltipCooldown>
       </div>
       {/* Formato */}
-      <div className="bg-green-500/90 rounded-xl p-6 min-w-[220px] flex flex-col gap-3 text-white shadow-lg">
+  <div className="bg-green-500/90 rounded-xl p-6 w-64 flex flex-col gap-3 text-white shadow-lg items-center">
         <div className="text-lg font-bold mb-2">Formato</div>
           <TooltipCooldown content="Aplica la función lógica AND" cooldown={1500}>
-            <button onClick={() => setFormulaText('=AND(true,false)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-400 hover:bg-green-600 font-semibold"><span>&&</span>AND</button>
+            <button onClick={() => setFormulaText('=AND(true,false)')} className="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 font-bold text-white">AND</button>
           </TooltipCooldown>
           <TooltipCooldown content="Aplica la función lógica OR" cooldown={1500}>
-            <button onClick={() => setFormulaText('=OR(true,false)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-400 hover:bg-green-600 font-semibold"><span>||</span>OR</button>
+            <button onClick={() => setFormulaText('=OR(true,false)')} className="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-bold text-white">OR</button>
           </TooltipCooldown>
           <TooltipCooldown content="Aplica la función lógica NOT" cooldown={1500}>
-            <button onClick={() => setFormulaText('=NOT(true)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-400 hover:bg-green-600 font-semibold"><span>!</span>NOT</button>
+            <button onClick={() => setFormulaText('=NOT(true)')} className="px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 font-bold text-white">NOT</button>
           </TooltipCooldown>
           <TooltipCooldown content="Elimina espacios en la celda seleccionada" cooldown={1500}>
-            <button onClick={() => setFormulaText('=TRIM(A1)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-400 hover:bg-green-600 font-semibold"><span>---</span>TRIM</button>
+            <button onClick={() => setFormulaText('=TRIM(A1)')} className="px-4 py-2 rounded-lg bg-yellow-200 hover:bg-yellow-300 font-bold text-gray-800">TRIM</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Concatena el contenido de varias celdas" cooldown={1500}>
+            <button onClick={() => setFormulaText('=CONCAT(A1,B1)')} className="px-4 py-2 rounded-lg bg-blue-200 hover:bg-blue-300 font-bold text-gray-800">CONCAT</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Devuelve la fecha actual" cooldown={1500}>
+            <button onClick={() => setFormulaText('=DATE()')} className="px-4 py-2 rounded-lg bg-green-400 hover:bg-green-500 font-bold text-white">DATE</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Devuelve la fecha de hoy" cooldown={1500}>
+            <button onClick={() => setFormulaText('=TODAY()')} className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 font-bold text-white">TODAY</button>
           </TooltipCooldown>
       </div>
     </div>
