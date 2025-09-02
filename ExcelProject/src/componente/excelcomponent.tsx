@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import TooltipCooldown from './Auxiliares/TooltipCooldown';
+import { TooltipCooldown, Toolbar } from './Auxiliares/TooltipCooldown';
 import Modal from './Auxiliares/Modal';
 import { FaTrash, FaCopy, FaPaste, FaExchangeAlt } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
@@ -1517,68 +1517,66 @@ const ExcelComponent: React.FC = () => {
 
   return (
     <div className={"min-h-screen p-6 bg-gray-50 dark:bg-gray-900 dark:text-gray-100"}>
-      <div className="max-w-full mx-auto relative">
-        <div className="flex items-center justify-between mb-3 gap-3">
-          <div className="flex items-center gap-2">
-        {/* Botones de combinar y separar celdas alineados a la izquierda */}
-        <div className="flex gap-4 mb-2 w-full justify-start">
-          <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
-            <button onClick={combineCells} className={`${BTN} bg-purple-600 hover:bg-purple-700 text-white`}>Combinar celdas</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Separa las celdas combinadas seleccionadas" cooldown={1500}>
-            <button onClick={separateCells} className={`${BTN} bg-pink-600 hover:bg-pink-700 text-white`}>Separar celdas</button>
-          </TooltipCooldown>
-        </div>
-            <TooltipCooldown content="Agrega una nueva fila al final de la tabla" cooldown={1500}>
-              <button onClick={addRow} className={`${BTN} bg-blue-600 text-white hover:bg-blue-700 transition`}>+ Fila</button>
-            </TooltipCooldown>
-            <TooltipCooldown content="Elimina la fila seleccionada" cooldown={1500}>
-              <button onClick={deleteRow} className={`${BTN} bg-red-600 text-white hover:bg-red-700 transition`}><FaTrash className="align-middle mr-2 text-sm" />Fila</button>
-            </TooltipCooldown>
-            <select value={selectedRow} onChange={e => setSelectedRow(Number(e.target.value))} className="px-2 h-9 rounded border text-sm bg-white dark:bg-gray-700 dark:text-gray-100">
-              {data.map((_, idx) => (
-                <option key={idx} value={idx}>{`Fila ${idx + 1}`}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <TooltipCooldown content="Agrega una nueva columna al final de la tabla" cooldown={1500}>
-              <button onClick={addCol} className={`${BTN} bg-green-600 text-white hover:bg-green-700 transition`}>+ Col</button>
-            </TooltipCooldown>
-            <TooltipCooldown content="Elimina la columna seleccionada" cooldown={1500}>
-              <button onClick={deleteCol} className={`${BTN} bg-red-600 text-white hover:bg-red-700 transition`}><FaTrash className="align-middle mr-2 text-sm" />Col</button>
-            </TooltipCooldown>
-            <select value={selectedCol} onChange={e => setSelectedCol(Number(e.target.value))} className="px-2 h-9 rounded border text-sm bg-white dark:bg-gray-700 dark:text-gray-100">
-              {data[0].map((_, idx) => (
-                <option key={idx} value={idx}>{getColName(idx)}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <TooltipCooldown content="Importa datos desde un archivo Excel (.xlsx, .xls,.csv)" cooldown={1500}>
-              <button onClick={() => fileInputRef.current?.click()} className={`${BTN} bg-yellow-500 hover:bg-yellow-600 text-black font-bold shadow-md border border-yellow-700`}>Importar Excel</button>
-            </TooltipCooldown>
-            <TooltipCooldown content="Exporta la tabla actual a un archivo Excel (.xlsx)" cooldown={1500}>
-              <button onClick={exportToExcel} className={`${BTN} bg-blue-500 hover:bg-blue-700 text-white font-bold shadow-md border border-blue-800`}>Exportar Excel</button>
-            </TooltipCooldown>
-            <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={onFileInputChange} className="hidden" />
-            <TooltipCooldown content="Limpia las celdas seleccionadas o toda la hoja si no hay selección" cooldown={1500}>
-              <button onClick={() => clearSelectedOrAll()} className={`${BTN} bg-gray-800 hover:bg-gray-900 text-white font-bold shadow-md border border-gray-900`}>Clean</button>
-            </TooltipCooldown>
-          </div>
-          <div className="absolute right-12 top-16 z-10">
-            <button
-              className={"w-11 h-11 rounded-full flex items-center justify-center shadow-md border-4 transition-colors " + (darkMode ? 'bg-gray-800 border-amber-400 text-amber-300' : 'bg-amber-300 border-amber-400 text-gray-800')}
-              title={darkMode ? "Modo claro" : "Modo oscuro"}
-              onClick={() => setDarkMode((d) => !d)}
-            >
-              <span className="text-xl">💡</span>
-            </button>
-          </div>
-          {/* eliminado botón duplicado */}
-        </div>
-      </div>
+      <Toolbar
+        BTN={BTN}
+        data={data}
+        selectedRow={selectedRow}
+        setSelectedRow={setSelectedRow}
+        addRow={addRow}
+        deleteRow={deleteRow}
+        selectedCol={selectedCol}
+        setSelectedCol={setSelectedCol}
+        addCol={addCol}
+        deleteCol={deleteCol}
+        fileInputRef={fileInputRef}
+        onFileInputChange={onFileInputChange}
+        exportToExcel={exportToExcel}
+        clearSelectedOrAll={clearSelectedOrAll}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        combineCells={combineCells}
+        separateCells={separateCells}
+        showToast={showToast}
+        copySelectionToClipboard={copySelectionToClipboard}
+        pasteClipboardAtSelection={pasteClipboardAtSelection}
+        pasteTransposedAtSelection={pasteTransposedAtSelection}
+        undo={undo}
+        redo={redo}
+        history={history}
+        future={future}
+        findText={findText}
+        setFindText={setFindText}
+        replaceText={replaceText}
+        setReplaceText={setReplaceText}
+        findMatches={findMatches}
+        replaceCurrent={replaceCurrent}
+        replaceAll={replaceAll}
+        freezeRows={freezeRows}
+        setFreezeRows={setFreezeRows}
+        freezeCols={freezeCols}
+        setFreezeCols={setFreezeCols}
+        setShowSortModal={setShowSortModal}
+        getColName={getColName}
+        selectionStart={selectionStart}
+        showCFModal={showCFModal}
+        setShowCFModal={setShowCFModal}
+        setCfTypeInput={setCfTypeInput}
+        setCfValueInput={setCfValueInput}
+        setCfColorInput={setCfColorInput}
+        cfScopeInput={cfScopeInput}
+        setCfScopeInput={setCfScopeInput}
+        compactMode={compactMode}
+        setCompactMode={setCompactMode}
+        showSumMenu={showSumMenu}
+        setShowSumMenu={setShowSumMenu}
+        applyQuickFunc={applyQuickFunc}
+        showCountMenu={showCountMenu}
+        setShowCountMenu={setShowCountMenu}
+        setFormulaText={setFormulaText}
+        applyFormulaToSelection={applyFormulaToSelection}
+        clearFormulaAndSelection={clearFormulaAndSelection}
+        computedSum={computedSum}
+      />
 
       {/* CONTROLES ADICIONALES: Undo/Redo, Find/Replace, Freeze, Sort, Conditional Formatting */}
       <div className="flex items-center gap-3 mb-3">
