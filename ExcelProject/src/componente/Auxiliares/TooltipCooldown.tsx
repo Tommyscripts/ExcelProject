@@ -103,6 +103,23 @@ export const Toolbar: React.FC<any> = ({
           <button onClick={replaceCurrent} className="px-4 py-2 rounded-lg bg-blue-500 text-white font-bold shadow hover:bg-blue-700 transition">Reemplazar</button>
         </TooltipCooldown>
       </div>
+      <div className="flex items-center gap-2 ml-auto">
+        <TooltipCooldown content="Importa datos desde un archivo" cooldown={1500}>
+          <>
+            <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 rounded-lg bg-indigo-500 text-white font-bold shadow hover:bg-indigo-700 transition">Importar</button>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={onFileInputChange}
+            />
+          </>
+        </TooltipCooldown>
+        <TooltipCooldown content="Exporta los datos a un archivo" cooldown={1500}>
+          <button onClick={exportToExcel} className="px-4 py-2 rounded-lg bg-green-700 text-white font-bold shadow hover:bg-green-900 transition">Exportar</button>
+        </TooltipCooldown>
+      </div>
     </div>
     {/* Secciones principales */}
     <div className="flex flex-wrap gap-6">
