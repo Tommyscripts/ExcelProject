@@ -99,6 +99,9 @@ export const Toolbar: React.FC<any> = ({
       <div className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-700 text-white font-semibold shadow">
         <span>🖊️</span>
         <input value={replaceText} onChange={e => setReplaceText(e.target.value)} placeholder="Reemplazar" className="bg-transparent outline-none text-white placeholder:text-gray-300" />
+        <TooltipCooldown content="Reemplaza el texto buscado por el nuevo valor" cooldown={1500}>
+          <button onClick={replaceCurrent} className="px-4 py-2 rounded-lg bg-blue-500 text-white font-bold shadow hover:bg-blue-700 transition">Reemplazar</button>
+        </TooltipCooldown>
       </div>
     </div>
     {/* Secciones principales */}
