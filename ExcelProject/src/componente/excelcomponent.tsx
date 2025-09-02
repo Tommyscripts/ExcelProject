@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Swal from 'sweetalert2';
 import { TooltipCooldown, Toolbar } from './Auxiliares/TooltipCooldown';
 import Modal from './Auxiliares/Modal';
 // Iconos antiguos eliminados junto con el menú viejo
@@ -250,12 +251,12 @@ const ExcelComponent: React.FC = () => {
   type CFRule = { id: string; type: 'gt' | 'lt' | 'eq' | 'contains'; value: string; bg?: string; color?: string; scope?: { r1: number, c1: number, r2: number, c2: number } | null };
   const [conditionalFormats, setConditionalFormats] = useState<CFRule[]>([]);
   // --- Local storage persistence ---
-  const STORAGE_KEY = 'meloexcel_v1';
-  const loadFromLocal = useCallback(() => {
+  // --- Persistencia en backend ---
+  const loadFromBackend = useCallback(async () => {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
+      const res = await fetch('/api/excel/load');
+      if (!res.ok) throw new Error('Error al cargar desde backend');
+      const parsed = await res.json();
       if (parsed.data) setData(parsed.data);
       if (parsed.merges) setMerges(parsed.merges);
       if (parsed.colWidths) setColWidths(parsed.colWidths);
@@ -264,11 +265,11 @@ const ExcelComponent: React.FC = () => {
       if (typeof parsed.freezeRows === 'number') setFreezeRows(parsed.freezeRows);
       if (typeof parsed.freezeCols === 'number') setFreezeCols(parsed.freezeCols);
     } catch (e) {
-      console.warn('Failed to load local save:', e);
+      console.warn('Error al cargar desde backend:', e);
     }
   }, []);
 
-  const saveToLocal = useCallback(() => {
+  const saveToBackend = useCallback(async () => {
     try {
       const payload = {
         data,
@@ -279,25 +280,44 @@ const ExcelComponent: React.FC = () => {
         freezeRows,
         freezeCols,
       };
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      const res = await fetch('/api/excel/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Error al guardar');
+      Swal.fire({
+        icon: 'success',
+        title: '¡Guardado!',
+        text: 'Los cambios se han guardado correctamente.',
+        timer: 1200,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end',
+      });
     } catch (e) {
-      console.warn('Failed to save to localStorage:', e);
+      console.warn('Error al guardar en backend:', e);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al guardar',
+        text: 'No se pudo guardar los cambios.',
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end',
+      });
     }
   }, [data, merges, colWidths, darkMode, conditionalFormats, freezeRows, freezeCols]);
 
-  const clearLocal = useCallback(() => {
-    try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
-  }, []);
+  // cargar una vez al montar
+  useEffect(() => { loadFromBackend(); }, [loadFromBackend]);
 
-  // load once on mount
-  useEffect(() => { loadFromLocal(); }, [loadFromLocal]);
-
-  // save whenever relevant state changes (but skip the initial run to avoid overwriting loaded data)
+  // guardar cada vez que cambie el estado relevante (excepto la primera vez)
   const skipFirstSave = React.useRef(true);
   useEffect(() => {
     if (skipFirstSave.current) { skipFirstSave.current = false; return; }
-    saveToLocal();
-  }, [saveToLocal]);
+    saveToBackend();
+  }, [saveToBackend]);
   // Replaced by the CF modal UI (showCFModal)
 
   // --- Mejoras UX: modales para Sort y Conditional Format + toast ---
