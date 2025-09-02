@@ -125,18 +125,41 @@ export const Toolbar: React.FC<any> = ({
       {/* Funciones */}
       <div className="bg-orange-500/90 rounded-xl p-6 min-w-[220px] flex flex-col gap-3 text-white shadow-lg">
         <div className="text-lg font-bold mb-2">Funciones</div>
-          <TooltipCooldown content="Suma los valores seleccionados" cooldown={1500}>
-            <button onClick={() => applyQuickFunc('SUM')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>∑</span>SUM</button>
+        {/* SUM y SUMIF */}
+        <div className="relative inline-block">
+          <TooltipCooldown content="Opciones de suma" cooldown={1500}>
+            <button onClick={() => setShowSumMenu(!showSumMenu)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold">
+              SUM <span className="ml-1">▼</span>
+            </button>
           </TooltipCooldown>
-          <TooltipCooldown content="Cuenta el número de celdas seleccionadas" cooldown={1500}>
-            <button onClick={() => applyQuickFunc('COUNT')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>234</span>COUNT</button>
+          {showSumMenu && (
+            <div className="absolute left-0 top-full mt-2 w-32 bg-blue-900 rounded shadow-lg z-50 flex flex-col">
+              <button onClick={() => applyQuickFunc('SUM')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">SUM</button>
+              <button onClick={() => applyQuickFunc('SUMIF')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">SUMIF</button>
+            </div>
+          )}
+        </div>
+        {/* COUNT y COUNTIF */}
+        <div className="relative inline-block">
+          <TooltipCooldown content="Opciones de conteo" cooldown={1500}>
+            <button onClick={() => setShowCountMenu(!showCountMenu)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold">
+              COUNT <span className="ml-1">▼</span>
+            </button>
           </TooltipCooldown>
-          <TooltipCooldown content="Calcula el promedio de los valores seleccionados" cooldown={1500}>
-            <button onClick={() => applyQuickFunc('AVERAGE')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>📊</span>AVERAGE</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Aplica la función ABS a la celda seleccionada" cooldown={1500}>
-            <button onClick={() => setFormulaText('=ABS(A1)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>✖️</span>ABS</button>
-          </TooltipCooldown>
+          {showCountMenu && (
+            <div className="absolute left-0 top-full mt-2 w-32 bg-blue-900 rounded shadow-lg z-50 flex flex-col">
+              <button onClick={() => applyQuickFunc('COUNT')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">COUNT</button>
+              <button onClick={() => applyQuickFunc('COUNTIF')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">COUNTIF</button>
+            </div>
+          )}
+        </div>
+        {/* AVERAGE y ABS siguen igual */}
+        <TooltipCooldown content="Calcula el promedio de los valores seleccionados" cooldown={1500}>
+          <button onClick={() => applyQuickFunc('AVERAGE')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>📊</span>AVERAGE</button>
+        </TooltipCooldown>
+        <TooltipCooldown content="Aplica la función ABS a la celda seleccionada" cooldown={1500}>
+          <button onClick={() => setFormulaText('=ABS(A1)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>✖️</span>ABS</button>
+        </TooltipCooldown>
       </div>
       {/* Formato */}
       <div className="bg-green-500/90 rounded-xl p-6 min-w-[220px] flex flex-col gap-3 text-white shadow-lg">
