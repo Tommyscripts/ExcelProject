@@ -86,8 +86,12 @@ export const Toolbar: React.FC<any> = ({
   clearFormulaAndSelection,
   computedSum,
   ...rest
-}) => (
-  <div className="space-y-6">
+}) => {
+  const [showRowsColsBox, setShowRowsColsBox] = useState(true);
+  const [showFunctionsBox, setShowFunctionsBox] = useState(true);
+
+  return (
+    <div className="space-y-6">
     {/* Cabecera Editar */}
     <div className="flex flex-wrap gap-3 bg-gray-800/80 p-4 rounded-xl">
       <button onClick={copySelectionToClipboard} className="flex items-center gap-2 px-6 py-3 rounded-lg bg-green-500 text-white font-semibold shadow hover:bg-green-600 transition"><span>📋</span>Copiar</button>
@@ -134,82 +138,104 @@ export const Toolbar: React.FC<any> = ({
     </div>
     {/* Secciones principales */}
     <div className="flex flex-wrap gap-6">
-  {/* Filas/Columnas */}
-  <div className="bg-blue-500/90 rounded-xl p-6 w-full max-w-3xl flex flex-col gap-3 text-white shadow-lg">
-        <div className="text-lg font-bold">Filas/Columnas</div>
-        <div className="flex flex-wrap gap-3 items-center">
-          <TooltipCooldown content="Añade una nueva fila debajo" cooldown={1500}>
-            <button onClick={addRow} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-400 hover:bg-blue-600 font-semibold"><span>➕</span>Insertar fila</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Elimina la fila seleccionada" cooldown={1500}>
-            <button onClick={deleteRow} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-700 font-semibold"><span>🗑️</span>Eliminar fila</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Añade una nueva columna a la derecha" cooldown={1500}>
-            <button onClick={addCol} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-400 hover:bg-blue-600 font-semibold"><span>➕</span>Insertar columna</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Elimina la columna seleccionada" cooldown={1500}>
-            <button onClick={deleteCol} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-700 font-semibold"><span>🗑️</span>Eliminar columna</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
-            <button onClick={combineCells} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500 hover:bg-purple-700 font-semibold"><span>🔗</span>Combinar celdas</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Separa las celdas combinadas seleccionadas" cooldown={1500}>
-            <button onClick={separateCells} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-400 hover:bg-purple-600 font-semibold"><span>✂️</span>Separar celdas</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Limpia la celda seleccionada o toda la tabla si no hay selección. Incluye celdas combinadas." cooldown={1500}>
-            <button onClick={clearSelectedOrAll} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 font-semibold text-gray-900"><span>🧹</span>Limpiar</button>
-          </TooltipCooldown>
+      {/* Filas/Columnas */}
+      <div className={"w-full max-w-3xl"}>
+        {/* Título clicable que muestra/oculta la caja de botones */}
+        <div className={showRowsColsBox ? "bg-blue-500/90 rounded-xl p-6 flex flex-col gap-3 text-white shadow-lg" : "inline-block"}>
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowRowsColsBox(!showRowsColsBox)}
+              className={"text-lg font-bold cursor-pointer select-none " + (showRowsColsBox ? "" : "bg-blue-500/90 px-3 py-1 rounded-full text-white shadow")}
+              aria-expanded={showRowsColsBox}
+            >
+              Filas/Columnas
+            </button>
+          </div>
+          {showRowsColsBox && (
+            <div className="flex flex-wrap gap-3 items-center">
+            <TooltipCooldown content="Añade una nueva fila debajo" cooldown={1500}>
+              <button onClick={addRow} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-400 hover:bg-blue-600 font-semibold"><span>➕</span>Insertar fila</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Elimina la fila seleccionada" cooldown={1500}>
+              <button onClick={deleteRow} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-700 font-semibold"><span>🗑️</span>Eliminar fila</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Añade una nueva columna a la derecha" cooldown={1500}>
+              <button onClick={addCol} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-400 hover:bg-blue-600 font-semibold"><span>➕</span>Insertar columna</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Elimina la columna seleccionada" cooldown={1500}>
+              <button onClick={deleteCol} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-700 font-semibold"><span>🗑️</span>Eliminar columna</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Combina las celdas seleccionadas en una sola" cooldown={1500}>
+              <button onClick={combineCells} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500 hover:bg-purple-700 font-semibold"><span>🔗</span>Combinar celdas</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Separa las celdas combinadas seleccionadas" cooldown={1500}>
+              <button onClick={separateCells} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-400 hover:bg-purple-600 font-semibold"><span>✂️</span>Separar celdas</button>
+            </TooltipCooldown>
+            <TooltipCooldown content="Limpia la celda seleccionada o toda la tabla si no hay selección. Incluye celdas combinadas." cooldown={1500}>
+              <button onClick={clearSelectedOrAll} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 font-semibold text-gray-900"><span>🧹</span>Limpiar</button>
+            </TooltipCooldown>
+            </div>
+          )}
         </div>
       </div>
       {/* Funciones */}
-  <div className="bg-orange-500/90 rounded-xl p-6 w-full max-w-3xl flex flex-col gap-3 text-white shadow-lg">
-        <div className="text-lg font-bold">Funciones</div>
-        <div className="flex flex-wrap gap-3 items-center">
-        {/* SUM y SUMIF */}
-        <div className="relative inline-block">
-          <TooltipCooldown content="Opciones de suma" cooldown={1500}>
-            <button onClick={() => setShowSumMenu(!showSumMenu)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold">
-              SUM <span className="ml-1">▼</span>
+      <div className={"w-full max-w-3xl"}>
+        <div className={showFunctionsBox ? "bg-orange-500/90 rounded-xl p-6 flex flex-col gap-3 text-white shadow-lg" : "inline-block"}>
+          <div>
+            <button type="button" onClick={() => setShowFunctionsBox(!showFunctionsBox)} className={"text-lg font-bold cursor-pointer select-none " + (showFunctionsBox ? "" : "bg-orange-500/90 px-3 py-1 rounded-full text-white shadow")} aria-expanded={showFunctionsBox}>
+              Funciones
             </button>
+          </div>
+          {showFunctionsBox && (
+            <div className="flex flex-wrap gap-3 items-center">
+          {/* SUM y SUMIF */}
+          <div className="relative inline-block">
+            <TooltipCooldown content="Opciones de suma" cooldown={1500}>
+              <button onClick={() => setShowSumMenu(!showSumMenu)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold">
+                SUM <span className="ml-1">▼</span>
+              </button>
+            </TooltipCooldown>
+            {showSumMenu && (
+              <div className="absolute left-0 top-full mt-2 w-32 bg-blue-900 rounded shadow-lg z-50 flex flex-col">
+                <button onClick={() => applyQuickFunc('SUM')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">SUM</button>
+                <button onClick={() => applyQuickFunc('SUMIF')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">SUMIF</button>
+              </div>
+            )}
+          </div>
+          {/* COUNT y COUNTIF */}
+          <div className="relative inline-block">
+            <TooltipCooldown content="Opciones de conteo" cooldown={1500}>
+              <button onClick={() => setShowCountMenu(!showCountMenu)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold">
+                COUNT <span className="ml-1">▼</span>
+              </button>
+            </TooltipCooldown>
+            {showCountMenu && (
+              <div className="absolute left-0 top-full mt-2 w-32 bg-blue-900 rounded shadow-lg z-50 flex flex-col">
+                <button onClick={() => applyQuickFunc('COUNT')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">COUNT</button>
+                <button onClick={() => applyQuickFunc('COUNTIF')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">COUNTIF</button>
+              </div>
+            )}
+          </div>
+          {/* AVERAGE y ABS siguen igual */}
+          <TooltipCooldown content="Calcula el promedio de los valores seleccionados" cooldown={1500}>
+            <button onClick={() => applyQuickFunc('AVERAGE')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>📊</span>AVERAGE</button>
           </TooltipCooldown>
-          {showSumMenu && (
-            <div className="absolute left-0 top-full mt-2 w-32 bg-blue-900 rounded shadow-lg z-50 flex flex-col">
-              <button onClick={() => applyQuickFunc('SUM')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">SUM</button>
-              <button onClick={() => applyQuickFunc('SUMIF')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">SUMIF</button>
+          <TooltipCooldown content="Aplica la función ABS a la celda seleccionada" cooldown={1500}>
+            <button onClick={() => setFormulaText('=ABS(A1)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>✖️</span>ABS</button>
+          </TooltipCooldown>
+          {/* MAX, MIN y ROUND */}
+          <TooltipCooldown content="Devuelve el valor máximo de la selección" cooldown={1500}>
+            <button onClick={() => applyQuickFunc('MAX')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-semibold"><span>⬆️</span>MAX</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Devuelve el valor mínimo de la selección" cooldown={1500}>
+            <button onClick={() => applyQuickFunc('MIN')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 font-semibold"><span>⬇️</span>MIN</button>
+          </TooltipCooldown>
+          <TooltipCooldown content="Redondea los valores seleccionados al entero más cercano" cooldown={1500}>
+            <button onClick={() => setFormulaText('=ROUND(A1)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-300 hover:bg-blue-400 font-semibold text-gray-900"><span>🔵</span>ROUND</button>
+          </TooltipCooldown>
             </div>
           )}
-        </div>
-        {/* COUNT y COUNTIF */}
-        <div className="relative inline-block">
-          <TooltipCooldown content="Opciones de conteo" cooldown={1500}>
-            <button onClick={() => setShowCountMenu(!showCountMenu)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold">
-              COUNT <span className="ml-1">▼</span>
-            </button>
-          </TooltipCooldown>
-          {showCountMenu && (
-            <div className="absolute left-0 top-full mt-2 w-32 bg-blue-900 rounded shadow-lg z-50 flex flex-col">
-              <button onClick={() => applyQuickFunc('COUNT')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">COUNT</button>
-              <button onClick={() => applyQuickFunc('COUNTIF')} className="px-4 py-2 text-blue-300 hover:bg-gray-700 text-left">COUNTIF</button>
-            </div>
-          )}
-        </div>
-        {/* AVERAGE y ABS siguen igual */}
-        <TooltipCooldown content="Calcula el promedio de los valores seleccionados" cooldown={1500}>
-          <button onClick={() => applyQuickFunc('AVERAGE')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>📊</span>AVERAGE</button>
-        </TooltipCooldown>
-        <TooltipCooldown content="Aplica la función ABS a la celda seleccionada" cooldown={1500}>
-          <button onClick={() => setFormulaText('=ABS(A1)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>✖️</span>ABS</button>
-        </TooltipCooldown>
-        {/* MAX, MIN y ROUND */}
-        <TooltipCooldown content="Devuelve el valor máximo de la selección" cooldown={1500}>
-          <button onClick={() => applyQuickFunc('MAX')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-semibold"><span>⬆️</span>MAX</button>
-        </TooltipCooldown>
-        <TooltipCooldown content="Devuelve el valor mínimo de la selección" cooldown={1500}>
-          <button onClick={() => applyQuickFunc('MIN')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 font-semibold"><span>⬇️</span>MIN</button>
-        </TooltipCooldown>
-        <TooltipCooldown content="Redondea los valores seleccionados al entero más cercano" cooldown={1500}>
-          <button onClick={() => setFormulaText('=ROUND(A1)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-300 hover:bg-blue-400 font-semibold text-gray-900"><span>🔵</span>ROUND</button>
-        </TooltipCooldown>
         </div>
       </div>
     </div>
@@ -221,5 +247,6 @@ export const Toolbar: React.FC<any> = ({
       <button onClick={clearFormulaAndSelection} className="px-4 py-2 rounded-lg bg-red-500 text-white font-bold shadow hover:bg-red-600 transition">❌</button>
     {/* Botones SUM eliminados */}
     </div>
-  </div>
-);
+    </div>
+    );
+  };
