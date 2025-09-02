@@ -127,6 +127,9 @@ export const Toolbar: React.FC<any> = ({
           <TooltipCooldown content="Separa las celdas combinadas seleccionadas" cooldown={1500}>
             <button onClick={separateCells} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-400 hover:bg-purple-600 font-semibold"><span>✂️</span>Separar celdas</button>
           </TooltipCooldown>
+          <TooltipCooldown content="Limpia la celda seleccionada o toda la tabla si no hay selección. Incluye celdas combinadas." cooldown={1500}>
+            <button onClick={clearSelectedOrAll} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 font-semibold text-gray-900"><span>🧹</span>Limpiar</button>
+          </TooltipCooldown>
       </div>
       {/* Funciones */}
   <div className="bg-orange-500/90 rounded-xl p-6 w-64 flex flex-col gap-3 text-white shadow-lg items-center">
@@ -165,6 +168,16 @@ export const Toolbar: React.FC<any> = ({
         </TooltipCooldown>
         <TooltipCooldown content="Aplica la función ABS a la celda seleccionada" cooldown={1500}>
           <button onClick={() => setFormulaText('=ABS(A1)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 hover:bg-orange-600 font-semibold"><span>✖️</span>ABS</button>
+        </TooltipCooldown>
+        {/* MAX, MIN y ROUND */}
+        <TooltipCooldown content="Devuelve el valor máximo de la selección" cooldown={1500}>
+          <button onClick={() => applyQuickFunc('MAX')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-semibold"><span>⬆️</span>MAX</button>
+        </TooltipCooldown>
+        <TooltipCooldown content="Devuelve el valor mínimo de la selección" cooldown={1500}>
+          <button onClick={() => applyQuickFunc('MIN')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 font-semibold"><span>⬇️</span>MIN</button>
+        </TooltipCooldown>
+        <TooltipCooldown content="Redondea los valores seleccionados al entero más cercano" cooldown={1500}>
+          <button onClick={() => setFormulaText('=ROUND(A1)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-300 hover:bg-blue-400 font-semibold text-gray-900"><span>🔵</span>ROUND</button>
         </TooltipCooldown>
       </div>
       {/* Formato */}
