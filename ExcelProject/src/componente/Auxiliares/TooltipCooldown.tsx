@@ -1,5 +1,6 @@
 
 import React, { useState, useRef } from 'react';
+import { FaLightbulb, FaRegLightbulb } from 'react-icons/fa';
 
 // TooltipCooldown: solo tooltip, ahora con Tailwind
 export const TooltipCooldown: React.FC<{ content: string; cooldown?: number; children: React.ReactNode }> = ({ content, cooldown = 1500, children }) => {
@@ -104,6 +105,16 @@ export const Toolbar: React.FC<any> = ({
         </TooltipCooldown>
       </div>
       <div className="flex items-center gap-2 ml-auto">
+        {/* Toggle claro/oscuro */}
+        <TooltipCooldown content="Cambiar tema claro/oscuro" cooldown={800}>
+          <button
+            aria-label="Cambiar tema"
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white shadow"
+          >
+            {darkMode ? <FaLightbulb className="w-5 h-5 text-yellow-300" /> : <FaRegLightbulb className="w-5 h-5" />}
+          </button>
+        </TooltipCooldown>
         <TooltipCooldown content="Importa datos desde un archivo" cooldown={1500}>
           <>
             <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 rounded-lg bg-indigo-500 text-white font-bold shadow hover:bg-indigo-700 transition">Importar</button>
@@ -124,8 +135,9 @@ export const Toolbar: React.FC<any> = ({
     {/* Secciones principales */}
     <div className="flex flex-wrap gap-6">
   {/* Filas/Columnas */}
-  <div className="bg-blue-500/90 rounded-xl p-6 w-64 flex flex-col gap-3 text-white shadow-lg items-center">
-        <div className="text-lg font-bold mb-2">Filas/Columnas</div>
+  <div className="bg-blue-500/90 rounded-xl p-6 w-full max-w-3xl flex flex-col gap-3 text-white shadow-lg">
+        <div className="text-lg font-bold">Filas/Columnas</div>
+        <div className="flex flex-wrap gap-3 items-center">
           <TooltipCooldown content="Añade una nueva fila debajo" cooldown={1500}>
             <button onClick={addRow} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-400 hover:bg-blue-600 font-semibold"><span>➕</span>Insertar fila</button>
           </TooltipCooldown>
@@ -147,10 +159,12 @@ export const Toolbar: React.FC<any> = ({
           <TooltipCooldown content="Limpia la celda seleccionada o toda la tabla si no hay selección. Incluye celdas combinadas." cooldown={1500}>
             <button onClick={clearSelectedOrAll} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 font-semibold text-gray-900"><span>🧹</span>Limpiar</button>
           </TooltipCooldown>
+        </div>
       </div>
       {/* Funciones */}
-  <div className="bg-orange-500/90 rounded-xl p-6 w-64 flex flex-col gap-3 text-white shadow-lg items-center">
-        <div className="text-lg font-bold mb-2">Funciones</div>
+  <div className="bg-orange-500/90 rounded-xl p-6 w-full max-w-3xl flex flex-col gap-3 text-white shadow-lg">
+        <div className="text-lg font-bold">Funciones</div>
+        <div className="flex flex-wrap gap-3 items-center">
         {/* SUM y SUMIF */}
         <div className="relative inline-block">
           <TooltipCooldown content="Opciones de suma" cooldown={1500}>
@@ -196,31 +210,7 @@ export const Toolbar: React.FC<any> = ({
         <TooltipCooldown content="Redondea los valores seleccionados al entero más cercano" cooldown={1500}>
           <button onClick={() => setFormulaText('=ROUND(A1)')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-300 hover:bg-blue-400 font-semibold text-gray-900"><span>🔵</span>ROUND</button>
         </TooltipCooldown>
-      </div>
-      {/* Formato */}
-  <div className="bg-green-500/90 rounded-xl p-6 w-64 flex flex-col gap-3 text-white shadow-lg items-center">
-        <div className="text-lg font-bold mb-2">Formato</div>
-          <TooltipCooldown content="Aplica la función lógica AND" cooldown={1500}>
-            <button onClick={() => setFormulaText('=AND(true,false)')} className="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 font-bold text-white">AND</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Aplica la función lógica OR" cooldown={1500}>
-            <button onClick={() => setFormulaText('=OR(true,false)')} className="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-bold text-white">OR</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Aplica la función lógica NOT" cooldown={1500}>
-            <button onClick={() => setFormulaText('=NOT(true)')} className="px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 font-bold text-white">NOT</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Elimina espacios en la celda seleccionada" cooldown={1500}>
-            <button onClick={() => setFormulaText('=TRIM(A1)')} className="px-4 py-2 rounded-lg bg-yellow-200 hover:bg-yellow-300 font-bold text-gray-800">TRIM</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Concatena el contenido de varias celdas" cooldown={1500}>
-            <button onClick={() => setFormulaText('=CONCAT(A1,B1)')} className="px-4 py-2 rounded-lg bg-blue-200 hover:bg-blue-300 font-bold text-gray-800">CONCAT</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Devuelve la fecha actual" cooldown={1500}>
-            <button onClick={() => setFormulaText('=DATE()')} className="px-4 py-2 rounded-lg bg-green-400 hover:bg-green-500 font-bold text-white">DATE</button>
-          </TooltipCooldown>
-          <TooltipCooldown content="Devuelve la fecha de hoy" cooldown={1500}>
-            <button onClick={() => setFormulaText('=TODAY()')} className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 font-bold text-white">TODAY</button>
-          </TooltipCooldown>
+        </div>
       </div>
     </div>
     {/* Barra de fórmulas */}
