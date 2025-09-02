@@ -312,12 +312,7 @@ const ExcelComponent: React.FC = () => {
   // cargar una vez al montar
   useEffect(() => { loadFromBackend(); }, [loadFromBackend]);
 
-  // guardar cada vez que cambie el estado relevante (excepto la primera vez)
-  const skipFirstSave = React.useRef(true);
-  useEffect(() => {
-    if (skipFirstSave.current) { skipFirstSave.current = false; return; }
-    saveToBackend();
-  }, [saveToBackend]);
+  // Guardado manual: solo al pulsar el botón
   // Replaced by the CF modal UI (showCFModal)
 
   // --- Mejoras UX: modales para Sort y Conditional Format + toast ---

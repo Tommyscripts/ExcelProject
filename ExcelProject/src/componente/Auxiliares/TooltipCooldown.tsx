@@ -1,5 +1,6 @@
 
 import React, { useState, useRef } from 'react';
+import Swal from 'sweetalert2';
 import { FaLightbulb, FaRegLightbulb } from 'react-icons/fa';
 
 // TooltipCooldown: solo tooltip, ahora con Tailwind
@@ -109,6 +110,37 @@ export const Toolbar: React.FC<any> = ({
         </TooltipCooldown>
       </div>
       <div className="flex items-center gap-2 ml-auto">
+        <TooltipCooldown content="Guarda los datos en la base de datos" cooldown={1200}>
+          <button
+            onClick={async () => {
+              try {
+                await rest.saveToBackend();
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Guardado',
+                  text: 'Los datos se han guardado correctamente.',
+                  timer: 1200,
+                  showConfirmButton: false,
+                  toast: true,
+                  position: 'top-end',
+                });
+              } catch (e) {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error al guardar',
+                  text: 'No se pudo guardar los datos.',
+                  timer: 2000,
+                  showConfirmButton: false,
+                  toast: true,
+                  position: 'top-end',
+                });
+              }
+            }}
+            className="px-4 py-2 rounded-lg bg-teal-500 text-white font-bold shadow hover:bg-teal-700 transition"
+          >
+            Guardar
+          </button>
+        </TooltipCooldown>
         {/* Toggle claro/oscuro */}
         <TooltipCooldown content="Cambiar tema claro/oscuro" cooldown={800}>
           <button
