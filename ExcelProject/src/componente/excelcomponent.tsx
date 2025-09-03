@@ -1329,11 +1329,18 @@ const ExcelComponent: React.FC = () => {
 
   // Quick action: build formula from current selection and apply (SUM/AVERAGE/COUNT)
   const applyQuickFunc = (fn: 'SUM' | 'AVERAGE' | 'COUNT' | 'CONCAT' | 'MAX' | 'MIN' | 'SUMIF' | 'COUNTIF') => {
-    if (!selectionStart || !selectionEnd) return;
-    const r1 = Math.min(selectionStart.row, selectionEnd.row);
-    const r2 = Math.max(selectionStart.row, selectionEnd.row);
-    const c1 = Math.min(selectionStart.col, selectionEnd.col);
-    const c2 = Math.max(selectionStart.col, selectionEnd.col);
+    let r1, r2, c1, c2;
+    
+    if (!selectionStart || !selectionEnd) {
+      // Si no hay selección, usar la celda actual o A1 por defecto
+      r1 = r2 = selected?.row || 0;
+      c1 = c2 = selected?.col || 0;
+    } else {
+      r1 = Math.min(selectionStart.row, selectionEnd.row);
+      r2 = Math.max(selectionStart.row, selectionEnd.row);
+      c1 = Math.min(selectionStart.col, selectionEnd.col);
+      c2 = Math.max(selectionStart.col, selectionEnd.col);
+    }
     // construir referencia A1:B2
     const colIdxToName = (idx: number) => {
       let s = '';
@@ -1346,21 +1353,31 @@ const ExcelComponent: React.FC = () => {
       return s;
     };
     const rangeStr = `${colIdxToName(c1)}${r1 + 1}:${colIdxToName(c2)}${r2 + 1}`;
-    const formula = `=${fn}(${rangeStr})`;
-    setFormulaText(formula);
-    // aplicar inmediatamente
-    const res = computeFormulaResult(formula);
-    if (res) {
-      setData(prev => {
-        const next = prev.map(r => [...r]);
-        next[r1][c1] = String(res.value);
-        return next;
-      });
-      setSelected({ row: r1, col: c1 });
-      setSelectionStart(null);
-      setSelectionEnd(null);
-      setComputedSum(res.value as number);
+    
+    let formula;
+    // Para SUMIF y COUNTIF, agregar una condición por defecto
+    if (fn === 'SUMIF') {
+      formula = `=${fn}(${rangeStr}, ">0")`;
+    } else if (fn === 'COUNTIF') {
+      formula = `=${fn}(${rangeStr}, ">0")`;
+    } else {
+      formula = `=${fn}(${rangeStr})`;
     }
+    
+    setFormulaText(formula);
+    // NO aplicar inmediatamente para que puedas ver la fórmula en la barra
+    // const res = computeFormulaResult(formula);
+    // if (res) {
+    //   setData(prev => {
+    //     const next = prev.map(r => [...r]);
+    //     next[r1][c1] = String(res.value);
+    //     return next;
+    //   });
+    //   setSelected({ row: r1, col: c1 });
+    //   setSelectionStart(null);
+    //   setSelectionEnd(null);
+    //   setComputedSum(res.value as number);
+    // }
   };
 
   const exportToExcel = () => {
