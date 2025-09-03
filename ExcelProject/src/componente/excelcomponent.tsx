@@ -267,13 +267,29 @@ const ExcelComponent: React.FC = () => {
         return;
       }
       if (parsed && typeof parsed === 'object') {
-        if (parsed.data) setData(parsed.data);
-        if (parsed.merges) setMerges(parsed.merges);
-        if (parsed.colWidths) setColWidths(parsed.colWidths);
-        if (typeof parsed.darkMode === 'boolean') { setDarkMode(parsed.darkMode); }
-        if (parsed.conditionalFormats) setConditionalFormats(parsed.conditionalFormats);
-        if (typeof parsed.freezeRows === 'number') setFreezeRows(parsed.freezeRows);
-        if (typeof parsed.freezeCols === 'number') setFreezeCols(parsed.freezeCols);
+        // El backend puede devolver varias formas:
+        // 1) { data: MATRIX, merges: [...] }   <-- legado
+        // 2) { data: { data: MATRIX, merges: [...] } } <-- cuando el cliente guardó un payload completo bajo data
+        // 3) payload directo: { data: MATRIX, merges, ... } o incluso MATRIX directamente
+        let payload: any = parsed;
+        if (parsed.data && parsed.data.data && Array.isArray(parsed.data.data)) {
+          // caso anidado: parsed.data es el payload que contiene .data (matriz)
+          payload = parsed.data;
+        }
+
+        // Si payload.data es una matriz, usarla; si payload es una matriz, usar payload directamente
+        if (Array.isArray(payload.data)) {
+          setData(payload.data);
+        } else if (Array.isArray(payload)) {
+          setData(payload);
+        }
+
+        if (payload.merges) setMerges(payload.merges);
+        if (payload.colWidths) setColWidths(payload.colWidths);
+        if (typeof payload.darkMode === 'boolean') { setDarkMode(payload.darkMode); }
+        if (payload.conditionalFormats) setConditionalFormats(payload.conditionalFormats);
+        if (typeof payload.freezeRows === 'number') setFreezeRows(payload.freezeRows);
+        if (typeof payload.freezeCols === 'number') setFreezeCols(payload.freezeCols);
       }
     } catch (e) {
       console.warn('Error al cargar desde backend:', e.message);
@@ -527,7 +543,10 @@ const ExcelComponent: React.FC = () => {
   // Cell component moved to ./Cell.tsx (memoized there). Use that instead of inline definition.
 
   const addRow = () => {
-    setData(prev => [...prev, Array(prev[0].length).fill('')]);
+    setData(prev => {
+      const cols = (prev && prev[0] && prev[0].length) ? prev[0].length : INITIAL_COLS;
+      return [...prev, Array(cols).fill('')];
+    });
   };
 
   const addCol = () => {
@@ -556,7 +575,8 @@ const ExcelComponent: React.FC = () => {
   };
 
   const deleteCol = () => {
-    if (data[0].length > 1 && selectedCol >= 0 && selectedCol < data[0].length) {
+    const cols = (data && data[0] && data[0].length) ? data[0].length : 0;
+    if (cols > 1 && selectedCol >= 0 && selectedCol < cols) {
       setData(prev => prev.map(row => row.filter((_, idx) => idx !== selectedCol)));
       setColWidths(prev => prev.filter((_, idx) => idx !== selectedCol));
       // ajustar merges: eliminar merges que intersecten la columna eliminada, y desplazar merges posteriores
@@ -567,7 +587,7 @@ const ExcelComponent: React.FC = () => {
         })
         .filter(m => !(selectedCol >= m.c && selectedCol < m.c + m.cols))
       );
-      setSelectedCol(selectedCol > 0 ? selectedCol - 1 : 0);
+  setSelectedCol(selectedCol > 0 ? selectedCol - 1 : 0);
     }
   };
 
@@ -1541,6 +1561,8 @@ const ExcelComponent: React.FC = () => {
   // Estilos globales para modo oscuro/claro
   // We rely on Tailwind `dark:` variants for styling. No injected CSS needed.
 
+  const headerCols = (data && data[0] && data[0].length) ? data[0].length : 0;
+
   return (
     <div className={"min-h-screen p-6 bg-gray-50 dark:bg-gray-900 dark:text-gray-100"}>
       <Toolbar
@@ -1612,7 +1634,7 @@ const ExcelComponent: React.FC = () => {
           <thead className="sticky top-0 bg-gray-100 dark:bg-gray-700">
             <tr>
               <th className="bg-gray-100 text-gray-700 border-r border-gray-200 w-10 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">&nbsp;</th>
-              {Array.from({ length: data[0].length }).map((_, colIdx) => (
+              {Array.from({ length: headerCols }).map((_, colIdx) => (
                 <th key={colIdx} data-header-col={colIdx} className="bg-gray-100 text-gray-700 text-center font-medium border-b border-gray-200 relative dark:bg-gray-700 dark:text-gray-200" style={{ width: colWidths[colIdx], height: 36 }}
                   onMouseDown={e => {
                     // iniciar drag de selección por columna (sin tocar filas)
