@@ -255,13 +255,16 @@ const ExcelComponent: React.FC = () => {
   const loadFromBackend = useCallback(async () => {
     try {
       const res = await fetch('/excel/load');
-      if (!res.ok) throw new Error('Error al cargar desde backend');
+      if (!res.ok) {
+        console.warn(`Backend load failed (HTTP ${res.status}), skipping...`);
+        return; // No lanzar error, solo saltar silenciosamente
+      }
       let parsed: any = null;
       try {
         parsed = await res.json();
       } catch (err) {
-        const text = await res.text();
-        throw new Error(text || 'Respuesta no válida del servidor');
+        console.warn('Backend response was not JSON, skipping...');
+        return;
       }
       if (parsed && typeof parsed === 'object') {
         if (parsed.data) setData(parsed.data);
@@ -273,7 +276,8 @@ const ExcelComponent: React.FC = () => {
         if (typeof parsed.freezeCols === 'number') setFreezeCols(parsed.freezeCols);
       }
     } catch (e) {
-      console.warn('Error al cargar desde backend:', e);
+      console.warn('Error al cargar desde backend:', e.message);
+      // No relanzar el error para evitar que se rompa la carga inicial
     }
   }, []);
 
