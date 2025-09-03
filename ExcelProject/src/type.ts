@@ -1,30 +1,62 @@
-// Tipos para el proyecto ExcelProject
+// Tipos de API alineados con el backend
+
+// Utilidades JSON seguras (para evitar any)
+export type JSONPrimitive = string | number | boolean | null;
+export type JSONValue = JSONPrimitive | JSONObject | JSONArray;
+export interface JSONObject { [key: string]: JSONValue }
+export interface JSONArray extends Array<JSONValue> {}
+
+// Entidades básicas (si se necesitan en el cliente)
 export interface User {
-  id?: number; // Opcional, porque en mongoose no está, pero en SQL sí
+  id?: number;
+  username: string;
+  email: string;
+  created_at?: string; // ISO string si viene desde SQL
+}
+
+// Forma estándar de error que usa el backend
+export interface ErrorResponse {
+  error: string;
+}
+
+// =====================
+// Auth: register/login
+// =====================
+export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
-  created_at?: string; // Opcional, solo en SQL
 }
 
-export interface ExcelData {
-  id?: number;
-  data: any; // JSONB, puede ser cualquier estructura
-  created_at?: string;
+export interface RegisterSuccess {
+  message: string; // "Usuario registrado correctamente"
+  userId: number;
 }
 
-// Respuestas de la API
-export interface ApiResponse {
-  message: string;
-  error?: string;
+export type RegisterResponse = RegisterSuccess | ErrorResponse;
+
+export interface LoginRequest {
+  username: string;
+  password: string;
 }
 
-export interface RegisterResponse extends ApiResponse {
-  userId?: number;
+export interface LoginSuccess {
+  message: string; // "Login exitoso"
 }
 
-export interface LoginResponse extends ApiResponse {}
+export type LoginResponse = LoginSuccess | ErrorResponse;
 
-export interface SaveExcelResponse extends ApiResponse {}
+// =====================
+// Excel: guardar datos
+// =====================
+export interface SaveExcelRequest {
+  // El backend espera req.body.data
+  data: JSONValue;
+}
 
-// ...otros tipos auxiliares si se requieren
+export interface SaveExcelSuccess {
+  message: string; // "Datos de Excel guardados correctamente en la base de datos"
+}
+
+export type SaveExcelResponse = SaveExcelSuccess | ErrorResponse;
+

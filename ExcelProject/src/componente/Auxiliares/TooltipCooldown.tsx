@@ -1,7 +1,7 @@
-
 import React, { useState, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { FaLightbulb, FaRegLightbulb } from 'react-icons/fa';
+import { SaveExcelRequest, SaveExcelResponse } from '../../type';
 
 // TooltipCooldown: solo tooltip, ahora con Tailwind
 export const TooltipCooldown: React.FC<{ content: string; cooldown?: number; children: React.ReactNode }> = ({ content, cooldown = 1500, children }) => {
@@ -25,6 +25,43 @@ export const TooltipCooldown: React.FC<{ content: string; cooldown?: number; chi
     </span>
   );
 };
+
+// Función para guardar los datos en el backend
+export async function saveToBackend(data: SaveExcelRequest['data']): Promise<SaveExcelResponse> {
+  try {
+    const response = await fetch('/excel/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data }),
+    });
+
+    // Intentar parsear JSON primero, independientemente del content-type
+    let parsed: any | null = null;
+    try {
+      parsed = await response.clone().json();
+    } catch {
+      // Ignorar, intentaremos como texto
+    }
+
+    if (parsed && typeof parsed === 'object') {
+      // Si la respuesta es JSON, devolverla tal cual (puede traer {message} o {error})
+      return parsed as SaveExcelResponse;
+    }
+
+    // Fallback a texto
+    const text = await response.text();
+    if (!response.ok) {
+      // Incluir status para mejor diagnóstico
+      return { error: `HTTP ${response.status} ${response.statusText}${text ? ` - ${text}` : ''}` } as SaveExcelResponse;
+    }
+    // Respuesta 2xx pero no JSON: asumir éxito y propagar texto si existe
+    return { message: text || 'Guardado correctamente.' } as SaveExcelResponse;
+  } catch (e: any) {
+    return { error: e?.message || 'Fallo de red al contactar el servidor.' } as SaveExcelResponse;
+  }
+}
 
 // Toolbar: toda la cabecera de botones y controles
 export const Toolbar: React.FC<any> = ({
@@ -114,21 +151,33 @@ export const Toolbar: React.FC<any> = ({
           <button
             onClick={async () => {
               try {
-                await rest.saveToBackend();
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Guardado',
-                  text: 'Los datos se han guardado correctamente.',
-                  timer: 1200,
-                  showConfirmButton: false,
-                  toast: true,
-                  position: 'top-end',
-                });
+                const res = await saveToBackend(data);
+                if ('error' in res && res.error) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Error al guardar',
+                    text: res.error,
+                    timer: 2000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end',
+                  });
+                } else {
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Guardado',
+                    text: (res as any).message || 'Guardado realizado.',
+                    timer: 1200,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end',
+                  });
+                }
               } catch (e) {
                 Swal.fire({
                   icon: 'error',
                   title: 'Error al guardar',
-                  text: 'No se pudo guardar los datos.',
+                  text: e.message || 'No se pudo guardar los datos.',
                   timer: 2000,
                   showConfirmButton: false,
                   toast: true,

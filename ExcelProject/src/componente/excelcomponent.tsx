@@ -254,60 +254,30 @@ const ExcelComponent: React.FC = () => {
   // --- Persistencia en backend ---
   const loadFromBackend = useCallback(async () => {
     try {
-      const res = await fetch('/api/excel/load');
+      const res = await fetch('/excel/load');
       if (!res.ok) throw new Error('Error al cargar desde backend');
-      const parsed = await res.json();
-      if (parsed.data) setData(parsed.data);
-      if (parsed.merges) setMerges(parsed.merges);
-      if (parsed.colWidths) setColWidths(parsed.colWidths);
-      if (typeof parsed.darkMode === 'boolean') { setDarkMode(parsed.darkMode); }
-      if (parsed.conditionalFormats) setConditionalFormats(parsed.conditionalFormats);
-      if (typeof parsed.freezeRows === 'number') setFreezeRows(parsed.freezeRows);
-      if (typeof parsed.freezeCols === 'number') setFreezeCols(parsed.freezeCols);
+      let parsed: any = null;
+      try {
+        parsed = await res.json();
+      } catch (err) {
+        const text = await res.text();
+        throw new Error(text || 'Respuesta no válida del servidor');
+      }
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.data) setData(parsed.data);
+        if (parsed.merges) setMerges(parsed.merges);
+        if (parsed.colWidths) setColWidths(parsed.colWidths);
+        if (typeof parsed.darkMode === 'boolean') { setDarkMode(parsed.darkMode); }
+        if (parsed.conditionalFormats) setConditionalFormats(parsed.conditionalFormats);
+        if (typeof parsed.freezeRows === 'number') setFreezeRows(parsed.freezeRows);
+        if (typeof parsed.freezeCols === 'number') setFreezeCols(parsed.freezeCols);
+      }
     } catch (e) {
       console.warn('Error al cargar desde backend:', e);
     }
   }, []);
 
-  const saveToBackend = useCallback(async () => {
-    try {
-      const payload = {
-        data,
-        merges,
-        colWidths,
-        darkMode,
-        conditionalFormats,
-        freezeRows,
-        freezeCols,
-      };
-      const res = await fetch('/api/excel/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Error al guardar');
-      Swal.fire({
-        icon: 'success',
-        title: '¡Guardado!',
-        text: 'Los cambios se han guardado correctamente.',
-        timer: 1200,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end',
-      });
-    } catch (e) {
-      console.warn('Error al guardar en backend:', e);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error al guardar',
-        text: 'No se pudo guardar los cambios.',
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end',
-      });
-    }
-  }, [data, merges, colWidths, darkMode, conditionalFormats, freezeRows, freezeCols]);
+  // Guardado centralizado: se maneja desde Toolbar.saveToBackend
 
   // cargar una vez al montar
   useEffect(() => { loadFromBackend(); }, [loadFromBackend]);
