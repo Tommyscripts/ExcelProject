@@ -1074,6 +1074,17 @@ const ExcelComponent: React.FC = () => {
     if (func === 'COUNT') {
       return { value: allVals.length, func };
     }
+    
+    // MAX: valor máximo del rango
+    if (func === 'MAX') {
+      return { value: Math.max(...allVals), func };
+    }
+    
+    // MIN: valor mínimo del rango
+    if (func === 'MIN') {
+      return { value: Math.min(...allVals), func };
+    }
+    
     // CONCAT: concatena los valores como texto
     if (func === 'CONCAT') {
       // Para CONCAT, obtener los valores como texto
@@ -1096,6 +1107,15 @@ const ExcelComponent: React.FC = () => {
         if (argParts.length === 1) {
           const n = Number(argParts[0]);
           return { value: Math.abs(n), func };
+        }
+        return { value: 0, func };
+      }
+
+      // ROUND: redondea un número al entero más cercano
+      if (func === 'ROUND') {
+        if (argParts.length === 1) {
+          const n = Number(argParts[0]);
+          return { value: Math.round(n), func };
         }
         return { value: 0, func };
       }
@@ -1308,7 +1328,7 @@ const ExcelComponent: React.FC = () => {
   };
 
   // Quick action: build formula from current selection and apply (SUM/AVERAGE/COUNT)
-  const applyQuickFunc = (fn: 'SUM' | 'AVERAGE' | 'COUNT' | 'CONCAT') => {
+  const applyQuickFunc = (fn: 'SUM' | 'AVERAGE' | 'COUNT' | 'CONCAT' | 'MAX' | 'MIN' | 'SUMIF' | 'COUNTIF') => {
     if (!selectionStart || !selectionEnd) return;
     const r1 = Math.min(selectionStart.row, selectionEnd.row);
     const r2 = Math.max(selectionStart.row, selectionEnd.row);
@@ -1561,6 +1581,7 @@ const ExcelComponent: React.FC = () => {
         applyQuickFunc={applyQuickFunc}
         showCountMenu={showCountMenu}
         setShowCountMenu={setShowCountMenu}
+        formulaText={formulaText}
         setFormulaText={setFormulaText}
         applyFormulaToSelection={applyFormulaToSelection}
         clearFormulaAndSelection={clearFormulaAndSelection}

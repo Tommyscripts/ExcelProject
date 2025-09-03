@@ -119,6 +119,7 @@ export const Toolbar: React.FC<any> = ({
   applyQuickFunc,
   showCountMenu,
   setShowCountMenu,
+  formulaText,
   setFormulaText,
   applyFormulaToSelection,
   clearFormulaAndSelection,
@@ -323,7 +324,7 @@ export const Toolbar: React.FC<any> = ({
     {/* Barra de fórmulas */}
     <div className="bg-gray-800/80 rounded-xl p-4 flex items-center gap-3 mt-4">
       <span className="text-white text-lg font-bold px-2">fx</span>
-      <input value={rest.formulaText} onChange={e => rest.setFormulaText(e.target.value)} placeholder="Barra de fórmulas" className="flex-1 px-3 py-2 rounded bg-gray-900 text-white placeholder:text-gray-400" />
+      <input value={formulaText} onChange={e => setFormulaText(e.target.value)} placeholder="Barra de fórmulas" className="flex-1 px-3 py-2 rounded bg-gray-900 text-white placeholder:text-gray-400" />
       <button onClick={applyFormulaToSelection} className="px-4 py-2 rounded-lg bg-green-500 text-white font-bold shadow hover:bg-green-600 transition">✔️</button>
       <button onClick={clearFormulaAndSelection} className="px-4 py-2 rounded-lg bg-red-500 text-white font-bold shadow hover:bg-red-600 transition">❌</button>
     {/* Botones SUM eliminados */}
