@@ -1,4 +1,12 @@
 {
+  "name": "excel-project-root",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "install:frontend": "cd ExcelProject && npm install --no-audit --no-fund",
+    "build": "cd ExcelProject && npm run build",
+    "dev": "cd ExcelProject && npm run dev"
+  },
   "dependencies": {
     "sweetalert2": "^11.22.5"
   }
