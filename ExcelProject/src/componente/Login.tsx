@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 type Props = {
-  onSuccess?: () => void;
+  onSuccess?: (user?: { id: number; username: string; email?: string; role?: string }) => void;
 };
 
 const Login: React.FC<Props> = ({ onSuccess }) => {
@@ -30,9 +30,12 @@ const Login: React.FC<Props> = ({ onSuccess }) => {
       if (!res.ok) {
         setError((data && data.error) || `Error en el servidor: ${res.status}`);
       } else {
-        // marcar como autenticado localmente
-        localStorage.setItem('user', username);
-        if (onSuccess) onSuccess();
+        // marcar como autenticado localmente usando el objeto devuelto por el backend
+        const userObj = (data && data.user) ? data.user : { id: 0, username };
+        try {
+          localStorage.setItem('user', JSON.stringify(userObj));
+        } catch {}
+        if (onSuccess) onSuccess(userObj);
       }
     } catch (err: any) {
       console.error('Fetch error:', err);
