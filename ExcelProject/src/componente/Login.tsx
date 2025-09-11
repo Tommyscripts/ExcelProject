@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiFetch } from '../lib/api';
 
 type Props = {
   onSuccess?: (user?: { id: number; username: string; email?: string; role?: string }) => void;
@@ -15,8 +16,8 @@ const Login: React.FC<Props> = ({ onSuccess }) => {
     setError(null);
     setLoading(true);
     try {
-  const url = '/auth/login'; // usar proxy de Vite en dev
-  const res = await fetch(url, {
+  const url = '/auth/login';
+  const res = await apiFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiFetch, buildAdminHeaders } from '../lib/api';
 
 type User = { id: number; username: string; email?: string; role?: string };
 
@@ -7,16 +8,17 @@ const AdminPanel: React.FC<{ onClose?: () => void, initialTab?: 'create'|'list' 
   const [activeTab, setActiveTab] = useState<'create'|'list'>(initialTab || 'create');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string; email?: string; password?: string }>({});
+  const [debugMsg, setDebugMsg] = useState<string | null>(null);
   const [form, setForm] = useState({ username: '', email: '', password: '', role: 'usuario' });
 
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
     try {
-      const rawUser = localStorage.getItem('user');
-      const headers: any = { 'Content-Type': 'application/json' };
-      if (rawUser) headers['x-user'] = rawUser;
-      const res = await fetch('/auth/users', { headers });
+  const headers = buildAdminHeaders();
+  const res = await apiFetch('/auth/users', { headers });
       const data = await res.json();
       if (!res.ok) throw new Error(data && data.error ? data.error : 'Error fetching');
       setUsers(data.users || []);
@@ -28,28 +30,50 @@ const AdminPanel: React.FC<{ onClose?: () => void, initialTab?: 'create'|'list' 
   useEffect(() => { fetchUsers(); }, []);
   useEffect(() => { if (initialTab) setActiveTab(initialTab); }, [initialTab]);
 
-  const submitCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitCreate = async (e?: any) => {
+  try { if (e && typeof e.preventDefault === 'function') e.preventDefault(); } catch {}
+  setDebugMsg('Invocando creación...');
+  console.log('[AdminPanel] submitCreate invoked', form);
     setError(null);
+    setSuccess(null);
+    setLoading(true);
     try {
-      const rawUser = localStorage.getItem('user');
-      const headers: any = { 'Content-Type': 'application/json' };
-      if (rawUser) headers['x-user'] = rawUser;
-      const res = await fetch('/auth/users', { method: 'POST', headers, body: JSON.stringify(form) });
+  const headers = buildAdminHeaders();
+      console.log('[AdminPanel] headers', headers);
+  console.log('[AdminPanel] body', JSON.stringify(form));
+  const res = await apiFetch('/auth/users', { method: 'POST', headers, body: JSON.stringify(form) });
       const data = await res.json();
-      if (!res.ok) throw new Error(data && data.error ? data.error : 'Error creating');
+      if (!res.ok) {
+        // Map backend validation messages to field-specific errors when possible
+        const msg = data && data.error ? String(data.error) : 'Error creating';
+        const lower = msg.toLowerCase();
+        const fe: any = {};
+        if (lower.includes('usuario') || lower.includes('username')) fe.username = msg;
+        if (lower.includes('email')) fe.email = msg;
+        if (lower.includes('password') || lower.includes('contrase')) fe.password = msg;
+        // generic exists message
+        if (!Object.keys(fe).length && /existe|already|duplicate/.test(lower)) {
+          // assume username/email conflict
+          fe.username = msg;
+          fe.email = msg;
+        }
+        setFieldErrors(fe);
+        throw new Error(msg);
+      }
       setForm({ username: '', email: '', password: '', role: 'usuario' });
+      setFieldErrors({});
+      setSuccess('Usuario creado correctamente');
+      setDebugMsg('Creación completada');
       fetchUsers();
     } catch (err: any) { setError(err.message || String(err)); }
+    finally { setLoading(false); setTimeout(() => setDebugMsg(null), 3500); }
   };
 
   const deleteUser = async (id: number) => {
     if (!confirm('Eliminar usuario?')) return;
     try {
-      const rawUser = localStorage.getItem('user');
-      const headers: any = { 'Content-Type': 'application/json' };
-      if (rawUser) headers['x-user'] = rawUser;
-      const res = await fetch(`/auth/users/${id}`, { method: 'DELETE', headers });
+  const headers = buildAdminHeaders();
+  const res = await apiFetch(`/auth/users/${id}`, { method: 'DELETE', headers });
       const data = await res.json();
       if (!res.ok) throw new Error(data && data.error ? data.error : 'Error deleting');
       fetchUsers();
@@ -57,15 +81,15 @@ const AdminPanel: React.FC<{ onClose?: () => void, initialTab?: 'create'|'list' 
   };
 
   return (
-    <div className="fixed inset-0 flex items-start justify-center p-6 z-50 backdrop-blur-sm bg-black/40 dark:bg-white/10">
-      <div className="w-full max-w-3xl relative rounded-2xl shadow-2xl p-6 ring-1 ring-inset transition-transform" style={{ maxHeight: '90vh', overflowY: 'auto', backgroundColor: 'var(--card)', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="fixed inset-0 flex items-start justify-center p-6 backdrop-blur-sm bg-black/40 dark:bg-white/10" style={{ zIndex: 9999, pointerEvents: 'auto' }}>
+      <div className="w-full max-w-3xl relative rounded-2xl shadow-2xl p-6 ring-1 ring-inset transition-transform" style={{ maxHeight: '90vh', overflowY: 'auto', backgroundColor: 'var(--card)', border: '1px solid rgba(255,255,255,0.06)', zIndex: 10000, pointerEvents: 'auto' }}>
         {/* Close button top-right (adjusted for contrast and placement) */}
         <button
           aria-label="Cerrar panel"
           title="Cerrar"
           onClick={() => { if (onClose) onClose(); }}
           className="absolute top-4 right-8 w-11 h-11 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-          style={{ backgroundColor: 'var(--card)', border: '1px solid rgba(0,0,0,0.08)', color: 'var(--muted)', zIndex: 60, transform: 'translate(6px, 6px)' }}
+          style={{ backgroundColor: 'var(--card)', border: '1px solid rgba(0,0,0,0.08)', color: 'var(--muted)', zIndex: 11000, transform: 'translate(6px, 6px)', pointerEvents: 'auto' }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'var(--muted)' }}>
             <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
@@ -86,19 +110,32 @@ const AdminPanel: React.FC<{ onClose?: () => void, initialTab?: 'create'|'list' 
           </div>
 
           {error && <div className="text-sm mb-3" style={{ color: '#e11d48' }}>{error}</div>}
+          {success && <div className="text-sm mb-3" style={{ color: 'var(--accent)' }}>{success}</div>}
+          {debugMsg && <div className="text-sm mb-3" style={{ color: 'var(--muted)' }}>{debugMsg}</div>}
 
           {activeTab === 'create' && (
-            <form onSubmit={submitCreate} className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <input required placeholder="Usuario" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)' }} />
-              <input required placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)' }} />
-              <input required placeholder="Contraseña" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)' }} />
-              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)' }}>
-                <option value="usuario">usuario</option>
-                <option value="admin">admin</option>
-              </select>
+            <form onSubmit={(e) => { e.preventDefault(); return false; }} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="min-w-0">
+                <input required placeholder="Usuario" value={form.username} onChange={e => { setForm({ ...form, username: e.target.value }); setFieldErrors({ ...fieldErrors, username: undefined }); }} className={`w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border ${fieldErrors.username ? 'border-red-400' : 'border-transparent'} focus:outline-none focus:ring-2 focus:ring-offset-1`} style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)', boxSizing: 'border-box' }} />
+                {fieldErrors.username && <div className="text-xs mt-1" style={{ color: '#e11d48' }}>{fieldErrors.username}</div>}
+              </div>
+              <div className="min-w-0">
+                <input required placeholder="Email" value={form.email} onChange={e => { setForm({ ...form, email: e.target.value }); setFieldErrors({ ...fieldErrors, email: undefined }); }} className={`w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border ${fieldErrors.email ? 'border-red-400' : 'border-transparent'} focus:outline-none focus:ring-2 focus:ring-offset-1`} style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)', boxSizing: 'border-box' }} />
+                {fieldErrors.email && <div className="text-xs mt-1" style={{ color: '#e11d48' }}>{fieldErrors.email}</div>}
+              </div>
+              <div className="min-w-0">
+                <input required placeholder="Contraseña" type="password" value={form.password} onChange={e => { setForm({ ...form, password: e.target.value }); setFieldErrors({ ...fieldErrors, password: undefined }); }} className={`w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border ${fieldErrors.password ? 'border-red-400' : 'border-transparent'} focus:outline-none focus:ring-2 focus:ring-offset-1`} style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)', boxSizing: 'border-box' }} />
+                {fieldErrors.password && <div className="text-xs mt-1" style={{ color: '#e11d48' }}>{fieldErrors.password}</div>}
+              </div>
+              <div className="min-w-0">
+                <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)', boxSizing: 'border-box' }}>
+                  <option value="usuario">usuario</option>
+                  <option value="admin">admin</option>
+                </select>
+              </div>
 
               <div className="col-span-full text-right">
-                <button type="submit" className="px-5 py-2 rounded-lg font-medium shadow hover:scale-105 transition-transform" style={{ background: 'linear-gradient(90deg,#34d399,#10b981)', color: '#fff', boxShadow: '0 6px 18px rgba(16,185,129,0.18)' }}>Crear</button>
+                <button disabled={loading} type="button" onClick={() => submitCreate()} className={`px-5 py-2 rounded-lg font-medium shadow hover:scale-105 transition-transform ${loading ? 'opacity-60 cursor-not-allowed' : ''}`} style={{ background: 'linear-gradient(90deg,#34d399,#10b981)', color: '#fff', boxShadow: '0 6px 18px rgba(16,185,129,0.18)' }}>{loading ? 'Creando...' : 'Crear'}</button>
               </div>
             </form>
           )}

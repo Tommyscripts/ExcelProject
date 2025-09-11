@@ -25,12 +25,15 @@ const App: React.FC = () => {
         if (parsed && parsed.username === 'admin' && (!parsed.role || parsed.role !== 'admin')) {
           parsed.role = 'admin';
         }
-        setUser(parsed);
+  setUser(parsed);
+  // Persistir normalización
+  try { localStorage.setItem('user', JSON.stringify(parsed)); } catch {}
       } catch {
         // Valores antiguos podían guardar solo el username como string.
         // Normalizar a un objeto user básico (role por defecto 'usuario').
         const normalized = { id: 0, username: raw, role: raw === 'admin' ? 'admin' : 'usuario' };
         setUser(normalized);
+  try { localStorage.setItem('user', JSON.stringify(normalized)); } catch {}
       }
     }
   }, []);
