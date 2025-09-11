@@ -57,15 +57,25 @@ const AdminPanel: React.FC<{ onClose?: () => void, initialTab?: 'create'|'list' 
   };
 
   return (
-    <div className="fixed inset-0 flex items-start justify-center p-6 z-50" style={{ backgroundColor: 'rgba(250,245,255,0.65)' }}>
-      <div className="w-full max-w-3xl rounded-2xl shadow-2xl p-6 ring-1 ring-inset" style={{ maxHeight: '90vh', overflowY: 'auto', backgroundColor: 'var(--card)', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="fixed inset-0 flex items-start justify-center p-6 z-50 backdrop-blur-sm bg-black/40 dark:bg-white/10">
+      <div className="w-full max-w-3xl relative rounded-2xl shadow-2xl p-6 ring-1 ring-inset transition-transform" style={{ maxHeight: '90vh', overflowY: 'auto', backgroundColor: 'var(--card)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        {/* Close button top-right (adjusted for contrast and placement) */}
+        <button
+          aria-label="Cerrar panel"
+          title="Cerrar"
+          onClick={() => { if (onClose) onClose(); }}
+          className="absolute top-4 right-8 w-11 h-11 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+          style={{ backgroundColor: 'var(--card)', border: '1px solid rgba(0,0,0,0.08)', color: 'var(--muted)', zIndex: 60, transform: 'translate(6px, 6px)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'var(--muted)' }}>
+            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold" style={{ color: 'var(--accent)' }}>Panel de administración</h3>
             <p className="text-sm" style={{ color: 'var(--muted)' }}>Gestiona usuarios y roles</p>
-          </div>
-          <div>
-            <button className="px-3 py-1 rounded-md border border-transparent text-sm font-medium" onClick={() => { if (onClose) onClose(); }} style={{ backgroundColor: 'transparent', color: 'var(--muted)' }}>Cerrar</button>
           </div>
         </div>
 
@@ -79,16 +89,16 @@ const AdminPanel: React.FC<{ onClose?: () => void, initialTab?: 'create'|'list' 
 
           {activeTab === 'create' && (
             <form onSubmit={submitCreate} className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <input required placeholder="Usuario" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none" style={{ backgroundColor: 'rgba(255,255,255,0.85)', color: 'var(--text)' }} />
-              <input required placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none" style={{ backgroundColor: 'rgba(255,255,255,0.85)', color: 'var(--text)' }} />
-              <input required placeholder="Contraseña" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none" style={{ backgroundColor: 'rgba(255,255,255,0.85)', color: 'var(--text)' }} />
-              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none" style={{ backgroundColor: 'rgba(255,255,255,0.85)', color: 'var(--text)' }}>
+              <input required placeholder="Usuario" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)' }} />
+              <input required placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)' }} />
+              <input required placeholder="Contraseña" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)' }} />
+              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text)' }}>
                 <option value="usuario">usuario</option>
                 <option value="admin">admin</option>
               </select>
 
               <div className="col-span-full text-right">
-                <button type="submit" className="px-5 py-2 rounded-lg font-medium shadow" style={{ background: 'linear-gradient(90deg,#34d399,#10b981)', color: '#fff' }}>Crear</button>
+                <button type="submit" className="px-5 py-2 rounded-lg font-medium shadow hover:scale-105 transition-transform" style={{ background: 'linear-gradient(90deg,#34d399,#10b981)', color: '#fff', boxShadow: '0 6px 18px rgba(16,185,129,0.18)' }}>Crear</button>
               </div>
             </form>
           )}
