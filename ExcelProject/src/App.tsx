@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import ExcelView from './view/excelview';
 import LoginView from './view/loginview';
+import Header from './componente/Header';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<string | null>(null);
@@ -22,13 +23,7 @@ const App: React.FC = () => {
 
   return (
     <div>
-      <div className="p-4 bg-gray-100 flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Excel Project</h1>
-        <div>
-          <span className="mr-4">{user}</span>
-          <button onClick={handleLogout} className="py-1 px-3 bg-red-500 text-white rounded">Cerrar sesión</button>
-        </div>
-      </div>
+      <Header user={user} onLogout={handleLogout} />
       <ExcelView />
     </div>
   );

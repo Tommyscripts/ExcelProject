@@ -44,43 +44,51 @@ const Login: React.FC<Props> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow">
-        <h2 className="text-2xl font-semibold mb-6 text-center">Iniciar sesión</h2>
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-pastel)' }}>
+      <div className="max-w-sm w-full p-6 rounded-2xl shadow-xl glass" style={{ backgroundColor: 'var(--card)' }}>
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>Iniciar sesión</h2>
+          <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>Accede a tu panel</p>
+        </div>
         {error && (
-          <div className="mb-4 text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>
+          <div className="mb-4 text-sm text-red-700 bg-red-50 p-3 rounded">{error}</div>
         )}
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Usuario</label>
+            <label className="block text-sm font-medium" style={{ color: 'var(--muted)' }}>Usuario</label>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="mt-1 block w-full px-4 py-3 border border-transparent rounded-lg shadow-sm focus:outline-none"
               placeholder="Usuario"
               required
+              style={{ backgroundColor: 'rgba(255,255,255,0.6)' }}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Contraseña</label>
+            <label className="block text-sm font-medium" style={{ color: 'var(--muted)' }}>Contraseña</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="mt-1 block w-full px-4 py-3 border border-transparent rounded-lg shadow-sm focus:outline-none"
               placeholder="Contraseña"
               required
+              style={{ backgroundColor: 'rgba(255,255,255,0.6)' }}
             />
           </div>
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full py-3 px-4 rounded-lg disabled:opacity-60"
             disabled={loading}
+            style={{ background: 'linear-gradient(90deg,var(--accent),var(--accent-2))', color: '#fff' }}
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
-  <p className="mt-4 text-xs text-gray-500 text-center">&nbsp;</p>
+        <div className="mt-6 text-center text-xs" style={{ color: 'var(--muted)' }}>
+          <span>¿Olvidaste tu contraseña? Contacta con el administrador.</span>
+        </div>
       </div>
     </div>
   );

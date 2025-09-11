@@ -8,9 +8,30 @@
 	body {
 		background-color: #ffffff;
 		color: #111827;
+		--bg-pastel: #f7f8fb;
+		--card: #ffffff;
+		--muted: #9aa3b2;
+		--accent: #9b7cff; /* pastel purple */
+		--accent-2: #7fd3c7; /* pastel teal */
+		--soft-pink: #ffdbe6;
+		--soft-yellow: #fff4d6;
 	}
 	.dark body {
-		background-color: #111827;
-		color: #f3f4f6;
+		background-color: #0b1220;
+		color: #e6eef6;
+		--bg-pastel: #071020;
+		--card: #071226;
+		--muted: #7b8aa1;
+		--accent: #a58cff;
+		--accent-2: #6ad9c6;
+		--soft-pink: #ffccdd;
+		--soft-yellow: #fff1c9;
 	}
 }
+
+/* Small utilities */
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
+  backdrop-filter: blur(6px);
+}
+
