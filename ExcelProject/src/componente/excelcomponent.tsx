@@ -292,7 +292,11 @@ const ExcelComponent: React.FC = () => {
         if (typeof payload.freezeCols === 'number') setFreezeCols(payload.freezeCols);
       }
     } catch (e) {
-      console.warn('Error al cargar desde backend:', e.message);
+      if (e && typeof e === 'object' && 'message' in e) {
+        console.warn('Error al cargar desde backend:', (e as any).message);
+      } else {
+        console.warn('Error al cargar desde backend:', e);
+      }
       // No relanzar el error para evitar que se rompa la carga inicial
     }
   }, []);
@@ -1629,13 +1633,13 @@ const ExcelComponent: React.FC = () => {
 
   {/* Menú viejo eliminado: mantenemos solo el Toolbar superior y la tabla */}
 
-      <div className="overflow-auto border rounded shadow-sm bg-white dark:bg-gray-800">
+  <div className="overflow-auto border rounded shadow-sm bg-[color:var(--card)] text-[color:var(--text)]">
         <table ref={tableRef} className="min-w-[1200px] w-full table-fixed" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-          <thead className="sticky top-0 bg-gray-100 dark:bg-gray-700">
+          <thead className="sticky top-0 bg-[color:var(--bg-pastel)]">
             <tr>
-              <th className="bg-gray-100 text-gray-700 border-r border-gray-200 w-10 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">&nbsp;</th>
+              <th className="bg-[color:var(--bg-pastel)] text-[color:var(--muted)] border-r border-gray-200 w-10">&nbsp;</th>
               {Array.from({ length: headerCols }).map((_, colIdx) => (
-                <th key={colIdx} data-header-col={colIdx} className="bg-gray-100 text-gray-700 text-center font-medium border-b border-gray-200 relative dark:bg-gray-700 dark:text-gray-200" style={{ width: colWidths[colIdx], height: 36 }}
+                <th key={colIdx} data-header-col={colIdx} className="bg-[color:var(--bg-pastel)] text-[color:var(--muted)] text-center font-medium border-b border-gray-200 relative" style={{ width: colWidths[colIdx], height: 36 }}
                   onMouseDown={e => {
                     // iniciar drag de selección por columna (sin tocar filas)
                     e.preventDefault();
@@ -1709,7 +1713,7 @@ const ExcelComponent: React.FC = () => {
           <tbody>
             {data.map((row, rowIdx) => (
               <tr key={rowIdx} className="align-top">
-                <th className="bg-gray-50 text-gray-600 border-r border-gray-100 w-10 text-center font-medium dark:bg-gray-700 dark:text-gray-200" style={{ height: 36 }}>{rowIdx + 1}</th>
+                <th className="bg-[color:var(--bg-pastel)] text-[color:var(--muted)] border-r border-gray-100 w-10 text-center font-medium" style={{ height: 36 }}>{rowIdx + 1}</th>
                 {row.map((cell, colIdx) => {
                   // comprobar si esta celda está cubierta por un merge existente (y si no es la cabecera del merge)
                   const covering = merges.find(m => rowIdx >= m.r && rowIdx < m.r + m.rows && colIdx >= m.c && colIdx < m.c + m.cols);
@@ -1777,17 +1781,17 @@ const ExcelComponent: React.FC = () => {
 
       {/* Modales y Toasts */}
       {showSortModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white p-4 rounded shadow-lg w-80 dark:bg-gray-800 dark:text-gray-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
+          <div className="p-4 rounded shadow-lg w-80" style={{ background: 'var(--card)', color: 'var(--text)' }}>
             <h3 className="font-bold mb-2">Sort Range</h3>
             <div className="mb-2">
               <label className="block text-xs">Columna (ej: A)</label>
-              <input value={sortColInput} onChange={e => setSortColInput(e.target.value)} className="w-full px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
+              <input value={sortColInput} onChange={e => setSortColInput(e.target.value)} className="w-full px-2 h-9 border rounded" style={{ background: 'var(--card)', color: 'var(--text)' }} />
             </div>
             <div className="mb-3">
               <label className="block text-xs">Dirección</label>
               <div className="relative group">
-                <select value={sortDirection} onChange={e => setSortDirection(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+                <select value={sortDirection} onChange={e => setSortDirection(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded appearance-none" style={{ background: 'var(--card)', color: 'var(--text)' }}>
                   <option value="asc">Ascendente</option>
                   <option value="desc">Descendente</option>
                 </select>
@@ -1817,13 +1821,13 @@ const ExcelComponent: React.FC = () => {
       )}
 
       {showCFModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white p-4 rounded shadow-lg w-80 dark:bg-gray-800 dark:text-gray-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
+          <div className="p-4 rounded shadow-lg w-80" style={{ background: 'var(--card)', color: 'var(--text)' }}>
             <h3 className="font-bold mb-2">Add Conditional Format</h3>
             <div className="mb-2">
               <label className="block text-xs">Tipo</label>
               <div className="relative group">
-                <select value={cfTypeInput} onChange={e => setCfTypeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+                <select value={cfTypeInput} onChange={e => setCfTypeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded appearance-none" style={{ background: 'var(--card)', color: 'var(--text)' }}>
                   <option value="gt">Greater than (gt)</option>
                   <option value="lt">Less than (lt)</option>
                   <option value="eq">Equals (eq)</option>
@@ -1838,12 +1842,12 @@ const ExcelComponent: React.FC = () => {
             </div>
             <div className="mb-2">
               <label className="block text-xs">Valor</label>
-              <input value={cfValueInput} onChange={e => setCfValueInput(e.target.value)} className="w-full px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600" />
+              <input value={cfValueInput} onChange={e => setCfValueInput(e.target.value)} className="w-full px-2 h-9 border rounded" style={{ background: 'var(--card)', color: 'var(--text)' }} />
             </div>
             <div className="mb-2">
               <label className="block text-xs">Scope</label>
               <div className="relative group">
-                <select value={cfScopeInput} onChange={e => setCfScopeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 appearance-none">
+                <select value={cfScopeInput} onChange={e => setCfScopeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded appearance-none" style={{ background: 'var(--card)', color: 'var(--text)' }}>
                   <option value="selection">Selección actual</option>
                   <option value="sheet">Toda la hoja</option>
                 </select>

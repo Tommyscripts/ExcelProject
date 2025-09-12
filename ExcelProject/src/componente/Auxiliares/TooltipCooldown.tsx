@@ -178,7 +178,7 @@ export const Toolbar: React.FC<any> = ({
                 Swal.fire({
                   icon: 'error',
                   title: 'Error al guardar',
-                  text: e.message || 'No se pudo guardar los datos.',
+                  text: (e instanceof Error ? e.message : 'No se pudo guardar los datos.'),
                   timer: 2000,
                   showConfirmButton: false,
                   toast: true,

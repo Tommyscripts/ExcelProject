@@ -48,29 +48,29 @@ const Login: React.FC<Props> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-pastel)' }}>
-      <div className="max-w-sm w-full p-6 rounded-2xl shadow-xl glass" style={{ backgroundColor: 'var(--card)' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-pastel)' }}>
+      <div className="max-w-sm w-full p-6 rounded-2xl shadow-xl glass" style={{ background: 'var(--card)', color: 'var(--text)' }}>
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>Iniciar sesión</h2>
-          <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>Accede a tu panel</p>
+          <h2 className="text-2xl font-bold text-[color:var(--accent)]">Iniciar sesión</h2>
+          <p className="text-sm mt-1 text-[color:var(--muted)]">Accede a tu panel</p>
         </div>
         {error && (
           <div className="mb-4 text-sm text-red-700 bg-red-50 p-3 rounded">{error}</div>
         )}
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium" style={{ color: 'var(--muted)' }}>Usuario</label>
-            <input
+            <label className="block text-sm font-medium text-[color:var(--muted)]">Usuario</label>
+              <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="mt-1 block w-full px-4 py-3 border border-transparent rounded-lg shadow-sm focus:outline-none"
               placeholder="Usuario"
               required
-              style={{ backgroundColor: 'rgba(255,255,255,0.6)' }}
+              style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text)' }}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium" style={{ color: 'var(--muted)' }}>Contraseña</label>
+            <label className="block text-sm font-medium text-[color:var(--muted)]">Contraseña</label>
             <input
               type="password"
               value={password}
@@ -78,7 +78,7 @@ const Login: React.FC<Props> = ({ onSuccess }) => {
               className="mt-1 block w-full px-4 py-3 border border-transparent rounded-lg shadow-sm focus:outline-none"
               placeholder="Contraseña"
               required
-              style={{ backgroundColor: 'rgba(255,255,255,0.6)' }}
+              style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text)' }}
             />
           </div>
           <button
@@ -90,7 +90,7 @@ const Login: React.FC<Props> = ({ onSuccess }) => {
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
-        <div className="mt-6 text-center text-xs" style={{ color: 'var(--muted)' }}>
+  <div className="mt-6 text-center text-xs text-[color:var(--muted)]">
           <span>¿Olvidaste tu contraseña? Contacta con el administrador.</span>
         </div>
       </div>

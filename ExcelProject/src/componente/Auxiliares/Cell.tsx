@@ -117,8 +117,8 @@ const Cell: React.FC<CellProps> = React.memo(function CellInner(props: CellProps
         tabIndex={0}
       />
       {(showTooltip && !isEditing.current && String(local).trim() !== '') && (
-        <div className="absolute left-0 top-0 z-50 p-2 bg-white border rounded shadow-md text-sm max-w-[400px] break-words dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
-          <div className="text-xs text-gray-500 mb-1">Texto completo</div>
+        <div className="absolute left-0 top-0 z-50 p-2 border rounded shadow-md text-sm max-w-[400px] break-words" style={{ background: 'var(--card)', color: 'var(--text)', borderColor: 'rgba(0,0,0,0.06)' }}>
+          <div className="text-xs text-[color:var(--muted)]" style={{ marginBottom: 4 }}>Texto completo</div>
           {local}
         </div>
       )}
