@@ -15,7 +15,7 @@ type Props = {
 
 const Header: React.FC<Props> = ({ user, onLogout, onOpenAdmin }) => {
   return (
-    <header className="p-4 flex justify-between items-center bg-[color:var(--card)]" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+    <header className="p-4 flex justify-between items-center bg-[color:var(--card)] border-b" style={{ borderBottomColor: 'rgba(0,0,0,0.04)' }}>
       <h1 className="text-lg font-semibold text-[color:var(--accent)]">Excel Project</h1>
       <div className="flex items-center space-x-3">
         <div className="text-sm mr-2 text-[color:var(--muted)]">

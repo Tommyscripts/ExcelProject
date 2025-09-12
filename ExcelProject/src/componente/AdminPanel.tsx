@@ -82,16 +82,15 @@ const AdminPanel: React.FC<{ onClose?: () => void, initialTab?: 'create'|'list' 
 
   return (
     <div className="fixed inset-0 flex items-start justify-center p-6 backdrop-blur-sm bg-black/40 dark:bg-black/50 z-[9999]">
-      <div className="w-full max-w-3xl relative rounded-2xl shadow-2xl p-6 ring-1 ring-inset transition-transform bg-[color:var(--card)] text-[color:var(--text)]" style={{ maxHeight: '90vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="w-full max-w-3xl relative rounded-2xl shadow-2xl p-6 ring-1 ring-inset transition-transform bg-[color:var(--card)] text-[color:var(--text)] overflow-y-auto" style={{ maxHeight: '90vh', border: '1px solid rgba(255,255,255,0.06)' }}>
         {/* Close button top-right (adjusted for contrast and placement) */}
           <button
           aria-label="Cerrar panel"
           title="Cerrar"
           onClick={() => { if (onClose) onClose(); }}
-          className="absolute top-4 right-8 w-11 h-11 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform bg-[color:var(--card)] text-[color:var(--muted)] z-[11000]"
-          style={{ border: '1px solid rgba(0,0,0,0.08)', transform: 'translate(6px, 6px)' }}
+          className="absolute top-4 right-8 w-11 h-11 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform bg-[color:var(--card)] text-[color:var(--muted)] z-[11000] translate-x-[6px] translate-y-[6px] border-[1px] border-[color:rgba(0,0,0,0.08)]"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'var(--muted)' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-[color:var(--muted)]">
             <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
@@ -104,9 +103,9 @@ const AdminPanel: React.FC<{ onClose?: () => void, initialTab?: 'create'|'list' 
         </div>
 
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <button className={`px-4 py-2 rounded-full transition ${activeTab === 'create' ? 'text-white' : ''}`} onClick={() => setActiveTab('create')} style={{ background: activeTab === 'create' ? 'linear-gradient(90deg,var(--accent),var(--accent-2))' : 'transparent', border: activeTab === 'create' ? 'none' : '1px solid rgba(0,0,0,0.06)', color: activeTab === 'create' ? '#fff' : 'var(--muted)' }}>Crear</button>
-            <button className={`px-4 py-2 rounded-full transition ${activeTab === 'list' ? 'text-white' : ''}`} onClick={() => setActiveTab('list')} style={{ background: activeTab === 'list' ? 'linear-gradient(90deg,#7dd3fc,#60a5fa)' : 'transparent', border: activeTab === 'list' ? 'none' : '1px solid rgba(0,0,0,0.06)', color: activeTab === 'list' ? '#fff' : 'var(--muted)' }}>Lista</button>
+            <div className="flex items-center gap-3 mb-4">
+            <button className={`px-4 py-2 rounded-full transition ${activeTab === 'create' ? 'text-white' : 'text-[color:var(--muted)]'}`} onClick={() => setActiveTab('create')} style={{ background: activeTab === 'create' ? 'linear-gradient(90deg,var(--accent),var(--accent-2))' : 'transparent', border: activeTab === 'create' ? 'none' : '1px solid rgba(0,0,0,0.06)' }}>{'Crear'}</button>
+            <button className={`px-4 py-2 rounded-full transition ${activeTab === 'list' ? 'text-white' : 'text-[color:var(--muted)]'}`} onClick={() => setActiveTab('list')} style={{ background: activeTab === 'list' ? 'linear-gradient(90deg,#7dd3fc,#60a5fa)' : 'transparent', border: activeTab === 'list' ? 'none' : '1px solid rgba(0,0,0,0.06)' }}>{'Lista'}</button>
           </div>
 
           {error && <div className="text-sm mb-3 text-[color:#e11d48]">{error}</div>}
@@ -116,26 +115,26 @@ const AdminPanel: React.FC<{ onClose?: () => void, initialTab?: 'create'|'list' 
           {activeTab === 'create' && (
             <form onSubmit={(e) => { e.preventDefault(); return false; }} className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="min-w-0">
-                <input required placeholder="Usuario" value={form.username} onChange={e => { setForm({ ...form, username: e.target.value }); setFieldErrors({ ...fieldErrors, username: undefined }); }} className={`w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border ${fieldErrors.username ? 'border-red-400' : 'border-transparent'} focus:outline-none focus:ring-2 focus:ring-offset-1`} style={{ backgroundColor: 'var(--card)', color: 'var(--text)', boxSizing: 'border-box' }} />
+                <input required placeholder="Usuario" value={form.username} onChange={e => { setForm({ ...form, username: e.target.value }); setFieldErrors({ ...fieldErrors, username: undefined }); }} className={`w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border ${fieldErrors.username ? 'border-red-400' : 'border-transparent'} focus:outline-none focus:ring-2 focus:ring-offset-1 bg-[color:var(--card)] text-[color:var(--text)]`} />
                 {fieldErrors.username && <div className="text-xs mt-1 text-[color:#e11d48]">{fieldErrors.username}</div>}
               </div>
               <div className="min-w-0">
-                <input required placeholder="Email" value={form.email} onChange={e => { setForm({ ...form, email: e.target.value }); setFieldErrors({ ...fieldErrors, email: undefined }); }} className={`w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border ${fieldErrors.email ? 'border-red-400' : 'border-transparent'} focus:outline-none focus:ring-2 focus:ring-offset-1`} style={{ backgroundColor: 'var(--card)', color: 'var(--text)', boxSizing: 'border-box' }} />
+                <input required placeholder="Email" value={form.email} onChange={e => { setForm({ ...form, email: e.target.value }); setFieldErrors({ ...fieldErrors, email: undefined }); }} className={`w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border ${fieldErrors.email ? 'border-red-400' : 'border-transparent'} focus:outline-none focus:ring-2 focus:ring-offset-1 bg-[color:var(--card)] text-[color:var(--text)]`} />
                 {fieldErrors.email && <div className="text-xs mt-1 text-[color:#e11d48]">{fieldErrors.email}</div>}
               </div>
               <div className="min-w-0">
-                <input required placeholder="Contraseña" type="password" value={form.password} onChange={e => { setForm({ ...form, password: e.target.value }); setFieldErrors({ ...fieldErrors, password: undefined }); }} className={`w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border ${fieldErrors.password ? 'border-red-400' : 'border-transparent'} focus:outline-none focus:ring-2 focus:ring-offset-1`} style={{ backgroundColor: 'var(--card)', color: 'var(--text)', boxSizing: 'border-box' }} />
+                <input required placeholder="Contraseña" type="password" value={form.password} onChange={e => { setForm({ ...form, password: e.target.value }); setFieldErrors({ ...fieldErrors, password: undefined }); }} className={`w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border ${fieldErrors.password ? 'border-red-400' : 'border-transparent'} focus:outline-none focus:ring-2 focus:ring-offset-1 bg-[color:var(--card)] text-[color:var(--text)]`} />
                 {fieldErrors.password && <div className="text-xs mt-1 text-[color:#e11d48]">{fieldErrors.password}</div>}
               </div>
               <div className="min-w-0">
-                <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1" style={{ backgroundColor: 'var(--card)', color: 'var(--text)', boxSizing: 'border-box' }}>
+                <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="w-full min-w-0 h-12 p-3 rounded-lg shadow-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-offset-1 bg-[color:var(--card)] text-[color:var(--text)]">
                   <option value="usuario">usuario</option>
                   <option value="admin">admin</option>
                 </select>
               </div>
 
               <div className="col-span-full text-right">
-                <button disabled={loading} type="button" onClick={() => submitCreate()} className={`px-5 py-2 rounded-lg font-medium shadow hover:scale-105 transition-transform ${loading ? 'opacity-60 cursor-not-allowed' : ''}`} style={{ background: 'linear-gradient(90deg,#34d399,#10b981)', color: '#fff', boxShadow: '0 6px 18px rgba(16,185,129,0.18)' }}>{loading ? 'Creando...' : 'Crear'}</button>
+                <button disabled={loading} type="button" onClick={() => submitCreate()} className={`px-5 py-2 rounded-lg font-medium shadow hover:scale-105 transition-transform ${loading ? 'opacity-60 cursor-not-allowed' : ''} text-white`} style={{ background: 'linear-gradient(90deg,#34d399,#10b981)', boxShadow: '0 6px 18px rgba(16,185,129,0.18)' }}>{loading ? 'Creando...' : 'Crear'}</button>
               </div>
             </form>
           )}

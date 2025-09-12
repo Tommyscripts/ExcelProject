@@ -49,7 +49,7 @@ const Login: React.FC<Props> = ({ onSuccess }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-pastel)' }}>
-      <div className="max-w-sm w-full p-6 rounded-2xl shadow-xl glass" style={{ background: 'var(--card)', color: 'var(--text)' }}>
+      <div className="max-w-sm w-full p-6 rounded-2xl shadow-xl glass bg-[color:var(--card)] text-[color:var(--text)]">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-[color:var(--accent)]">Iniciar sesión</h2>
           <p className="text-sm mt-1 text-[color:var(--muted)]">Accede a tu panel</p>

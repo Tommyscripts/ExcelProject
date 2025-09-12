@@ -26,13 +26,13 @@ const Modal: React.FC<ModalProps> = ({ title, children, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.4)' }}>
-      <div ref={ref} className="p-4 rounded shadow-lg w-80" style={{ background: 'var(--card)', color: 'var(--text)' }}>
+      <div ref={ref} className="p-4 rounded shadow-lg w-80 bg-[color:var(--card)] text-[color:var(--text)]">
         {title && <h3 className="font-bold mb-2">{title}</h3>}
         <div>
           {children}
         </div>
         <div className="flex justify-end mt-3">
-          <button onClick={onClose} className={`inline-flex items-center h-9 px-3 rounded text-sm border`} style={{ background: 'transparent', color: 'var(--muted)', borderColor: 'rgba(0,0,0,0.06)' }}>Cerrar</button>
+          <button onClick={onClose} className={`inline-flex items-center h-9 px-3 rounded text-sm border border-[color:rgba(0,0,0,0.06)] text-[color:var(--muted)] bg-transparent`}>Cerrar</button>
         </div>
       </div>
     </div>

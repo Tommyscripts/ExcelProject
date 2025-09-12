@@ -1782,16 +1782,16 @@ const ExcelComponent: React.FC = () => {
       {/* Modales y Toasts */}
       {showSortModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
-          <div className="p-4 rounded shadow-lg w-80" style={{ background: 'var(--card)', color: 'var(--text)' }}>
+          <div className="p-4 rounded shadow-lg w-80 bg-[color:var(--card)] text-[color:var(--text)]">
             <h3 className="font-bold mb-2">Sort Range</h3>
             <div className="mb-2">
               <label className="block text-xs">Columna (ej: A)</label>
-              <input value={sortColInput} onChange={e => setSortColInput(e.target.value)} className="w-full px-2 h-9 border rounded" style={{ background: 'var(--card)', color: 'var(--text)' }} />
+              <input value={sortColInput} onChange={e => setSortColInput(e.target.value)} className="w-full px-2 h-9 border rounded bg-[color:var(--card)] text-[color:var(--text)]" />
             </div>
             <div className="mb-3">
               <label className="block text-xs">Dirección</label>
               <div className="relative group">
-                <select value={sortDirection} onChange={e => setSortDirection(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded appearance-none" style={{ background: 'var(--card)', color: 'var(--text)' }}>
+                <select value={sortDirection} onChange={e => setSortDirection(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded appearance-none bg-[color:var(--card)] text-[color:var(--text)]">
                   <option value="asc">Ascendente</option>
                   <option value="desc">Descendente</option>
                 </select>
@@ -1822,12 +1822,12 @@ const ExcelComponent: React.FC = () => {
 
       {showCFModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
-          <div className="p-4 rounded shadow-lg w-80" style={{ background: 'var(--card)', color: 'var(--text)' }}>
+          <div className="p-4 rounded shadow-lg w-80 bg-[color:var(--card)] text-[color:var(--text)]">
             <h3 className="font-bold mb-2">Add Conditional Format</h3>
             <div className="mb-2">
               <label className="block text-xs">Tipo</label>
               <div className="relative group">
-                <select value={cfTypeInput} onChange={e => setCfTypeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded appearance-none" style={{ background: 'var(--card)', color: 'var(--text)' }}>
+                <select value={cfTypeInput} onChange={e => setCfTypeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded appearance-none bg-[color:var(--card)] text-[color:var(--text)]">
                   <option value="gt">Greater than (gt)</option>
                   <option value="lt">Less than (lt)</option>
                   <option value="eq">Equals (eq)</option>
@@ -1842,12 +1842,12 @@ const ExcelComponent: React.FC = () => {
             </div>
             <div className="mb-2">
               <label className="block text-xs">Valor</label>
-              <input value={cfValueInput} onChange={e => setCfValueInput(e.target.value)} className="w-full px-2 h-9 border rounded" style={{ background: 'var(--card)', color: 'var(--text)' }} />
+              <input value={cfValueInput} onChange={e => setCfValueInput(e.target.value)} className="w-full px-2 h-9 border rounded bg-[color:var(--card)] text-[color:var(--text)]" />
             </div>
             <div className="mb-2">
               <label className="block text-xs">Scope</label>
               <div className="relative group">
-                <select value={cfScopeInput} onChange={e => setCfScopeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded appearance-none" style={{ background: 'var(--card)', color: 'var(--text)' }}>
+                <select value={cfScopeInput} onChange={e => setCfScopeInput(e.target.value as any)} className="w-full pr-8 px-2 h-9 border rounded appearance-none bg-[color:var(--card)] text-[color:var(--text)]">
                   <option value="selection">Selección actual</option>
                   <option value="sheet">Toda la hoja</option>
                 </select>
