@@ -4,7 +4,8 @@ export type Range = { r1:number; c1:number; r2:number; c2:number };
 export type Merge = { r:number; c:number; rows:number; cols:number };
 export type CFRule = { id:string; type: 'gt'|'lt'|'eq'|'contains'; value:string; bg?:string; color?:string; scope?: Range | null };
 
-const STORAGE_KEY = 'meloexcel_v1';
+const STORAGE_KEY = 'novasheet_v1';
+const LEGACY_STORAGE_KEY = 'meloexcel_v1';
 
 export function createInitialData(rows:number, cols:number) {
   return Array.from({ length: rows }, () => Array(cols).fill('')) as string[][];
@@ -62,7 +63,9 @@ export default function useSpreadsheet(initialRows = 46, initialCols = 22) {
   // persistence
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw =
+        window.localStorage.getItem(STORAGE_KEY) ??
+        window.localStorage.getItem(LEGACY_STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (parsed.data) setData(parsed.data);
@@ -70,13 +73,17 @@ export default function useSpreadsheet(initialRows = 46, initialCols = 22) {
       if (parsed.colWidths) setColWidths(parsed.colWidths);
       if (typeof parsed.darkMode === 'boolean') setDarkMode(parsed.darkMode);
     } catch (e) {
-      // ignore
+      console.error('Failed to load spreadsheet state from localStorage.', e);
     }
   }, []);
 
   useEffect(() => {
     const payload = { data, merges, colWidths, darkMode };
-    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+      console.error('Failed to save spreadsheet state to localStorage.', e);
+    }
   }, [data, merges, colWidths, darkMode]);
 
   // basic mutators

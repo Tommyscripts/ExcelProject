@@ -1,1 +1,31 @@
+# dependencies
 node_modules/
+ExcelProject/node_modules/
+
+# build outputs
+dist/
+ExcelProject/dist/
+ExcelProject/dist-ssr/
+
+# logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# local/env
+*.local
+
+# editor/OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
