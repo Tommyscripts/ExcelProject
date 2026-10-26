@@ -1,63 +1,117 @@
+# NovaSheet
 
-# ExcelProject
+> Una hoja de cálculo web con actitud de producto: rápida, limpia y pensada para trabajar, no para pelear con menús.
 
-¡Bienvenido, joven padawan, al ExcelProject!
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-success)
 
-> "El miedo a las hojas de cálculo lleva a la ira, la ira lleva al odio, el odio lleva al sufrimiento... ¡y a usar Excel!" — Maestro Yoda (probablemente)
+---
 
-## ¿Qué es esto?
+## Por qué existe NovaSheet
 
-Un proyecto tan poderoso que haría temblar a la mismísima Estrella de la Muerte: una hoja de cálculo tipo Excel hecha en React, donde puedes escribir, añadir filas y columnas, y sentirte como el emperador de tus propios datos.
+NovaSheet nace para un caso muy concreto: abrir, editar y mover datos como en una spreadsheet sin cargar con toda la fricción de una suite gigantesca.
 
-## ¿Por qué?
+**No compite con Excel.**  
+Compite con la pérdida de tiempo cuando solo quieres resolver algo en minutos.
 
-Porque los Jedi usan la Fuerza, pero los frikis usamos JavaScript, y si puedes hacer tu propio Excel, ¿por qué no hacerlo?
+---
 
-## Características
+## Qué puedes hacer hoy
 
-- Celdas editables, para que no dependas del Lado Oscuro de Microsoft.
-- Añade filas y columnas como si usaras la Fuerza.
-- Interfaz tan limpia que ni un droide de protocolo podría quejarse.
-- ¡Sin midi-chlorianos requeridos!
+- Editar celdas al vuelo.
+- Agregar y eliminar filas/columnas.
+- Pegar bloques de datos con expansión automática de la grilla.
+- Mantener sesión gracias a persistencia en `localStorage`.
+- Trabajar con rutas protegidas por login para flujo interno.
 
-## Instalación
+---
 
-1. Clona este repositorio con la Fuerza (o con git):
-	```bash
-	git clone <url-del-repo>
-	```
-2. Instala las dependencias:
-	```bash
-	npm install
-	```
-3. Lanza el Halcón Milenario:
-	```bash
-	npm run dev
-	```
-4. Abre tu navegador en [http://localhost:5173](http://localhost:5173) y que la Fuerza te acompañe.
+## Stack técnico
 
-## ¿Quién hizo esto?
+- **UI:** React 19
+- **Build Tool:** Vite 7
+- **Routing:** React Router
+- **Estilos:** Tailwind CSS
+- **Calidad:** ESLint (flat config)
 
-Un friki con más líneas de código que midiclorianos en la sangre de Anakin.
+---
 
-## Contribuir
+## Arranque rápido
 
-¿Quieres unirte a la Orden Jedi de los desarrolladores? Haz un fork, abre un PR y que la Fuerza del open source esté contigo.
+### Requisitos
+
+- Node.js 20+
+- pnpm 11+ (recomendado para respetar el lockfile)
+
+### Desarrollo local
+
+```bash
+pnpm install
+pnpm run dev
+```
+
+App local: `http://localhost:5173`
+
+---
+
+## Scripts del proyecto
+
+```bash
+pnpm run dev      # servidor de desarrollo
+pnpm run build    # build de producción (carpeta dist/)
+pnpm run preview  # sirve el build localmente
+pnpm run lint     # valida estilo y reglas
+```
+
+---
+
+## Estructura base
+
+```text
+src/
+  componente/          # UI principal (header, admin, celdas, modales, etc.)
+  componente/Auxiliares/
+  view/                # vistas de login y spreadsheet
+  lib/                 # utilidades compartidas
+```
+
+---
+
+## Deploy en Netlify (importante)
+
+Si en Netlify usas `pnpm run dev` como build command, el deploy **se queda colgado** porque `dev` levanta un servidor y no termina.
+
+Este repositorio ya queda preparado para Netlify con:
+
+- **Build command:** `pnpm run build`
+- **Publish directory:** `dist`
+
+Además, se configura redirección SPA para que rutas de React Router no den 404 al refrescar.
+
+---
+
+## Roadmap corto
+
+- Atajos de teclado más completos
+- Fórmulas básicas
+- Export/import más robusto
+- Mejoras visuales por tipo de celda
+
+---
+
+## Contribuciones
+
+1. Haz fork
+2. Crea rama: `feature/mi-mejora`
+3. Ejecuta `pnpm run lint`
+4. Abre PR explicando problema, solución y forma de prueba
+
+---
 
 ## Licencia
 
-MIT, porque en la galaxia nadie paga licencias imperiales.
+MIT.
 
----
-
-## Easter Eggs y referencias frikis
-
-- Si encuentras el error #404, tranquilo, no es una trampa del Imperio, solo es un bug.
-- ¿Sabías que si presionas Ctrl+S tres veces seguidas, Chewbacca te manda un rugido de aprobación? (No, pero imagínalo).
-- Este README fue escrito con la ayuda de un droide protocolario y revisado por un Jawa.
-- Si tu código falla, recuerda: “Que la Fuerza (de voluntad para debuggear) te acompañe”.
-- Rumor: Si abres la consola y escribes `console.log('I am your father')`, tu navegador se vuelve Sith.
-
----
-
-> "Hazlo o no lo hagas, pero no lo intentes... ¡y dale una estrella a este repo!" — Yoda
+Si te fue útil, deja una estrella. Ayuda bastante a mantener el proyecto vivo. ⭐
